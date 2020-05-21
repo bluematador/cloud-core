@@ -1,31 +1,96 @@
 <template>
 	<div id="app">
-		<HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+		<nav class="navbar navbar-expand navbar-dark bg-dark">
+			<div class="navbar-brand mr-5">AWS Cost Inventory</div>
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a href="#" @click.stop.prevent="navigate('accounts')" :class="{'nav-link': true, 'active': view === 'accounts'}">
+						Accounts
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="#" @click.stop.prevent="navigate('resources')" :class="{'nav-link': true, 'active': view === 'resources'}">
+						Resources
+					</a>
+				</li>
+				<li class="nav-item dropdown">
+					<a href="#" @click.stop.prevent="drop('about')" :class="'nav-link dropdown-toggle ' + (['faq', 'instructions'].includes(view) ? 'active' : '')">
+						About
+					</a>
+					<div :class="'dropdown-menu '  + (dropdown === 'about' ? 'show' : '')">
+						<a :class="'dropdown-item ' + (view === 'instructions' ? 'active' : '')" href="#" @click.stop.prevent="navigate('instructions')">
+							Instructions
+						</a>
+						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" target="_blank">
+							<i class="fas fa-external-link-alt"></i>
+							Source (Github)
+						</a>
+						<a class="dropdown-item" href="https://www.bluematador.com/" target="_blank">
+							<i class="fas fa-external-link-alt"></i>
+							Blue Matador
+						</a>
+					</div>
+				</li>
+			</ul>
+		</nav>
+
+		<Instructions v-if="view === 'instructions'" />
+		<Accounts v-if="view === 'accounts'" />
+		<Resources v-if="view === 'resources'" />
+
+		<footer class="text-center text-light mt-5 p-3 bg-dark">
+			&copy; 2020 Blue Matador, Inc.
+		</footer>
 	</div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
+import Accounts from './components/Accounts.vue';
+import Instructions from './components/Instructions.vue';
+import Resources from './components/Resources.vue';
 
 @Component({
 	components: {
-		HelloWorld,
+		Accounts,
+		Instructions,
+		Resources,
 	},
 })
-export default class App extends Vue {}
+export default class App extends Vue {
+	private view: string = 'instructions';
+	private dropdown: string = '';
+
+	mounted(): void {
+		document.addEventListener('click', this.rootClicked);
+	}
+
+	beforeDestroy(): void {
+		document.removeEventListener('click', this.rootClicked);
+	}
+
+	private rootClicked(): void {
+		if (this.dropdown) {
+			this.dropdown = '';
+		}
+	}
+
+	private drop(ref: string): void {
+		this.dropdown = ref;
+	}
+
+	private navigate(ref: string): void {
+		this.dropdown = '';
+		this.view = ref;
+	}
+}
 </script>
 
 <style lang="scss">
 @import 'bootstrap';
 @import 'fontawesome';
 
-#app {
-	font-family: Avenir, Helvetica, Arial, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-align: center;
-	color: #2c3e50;
-	margin-top: 60px;
+nav .nav-item {
+	margin-right: 20px;
 }
 </style>
