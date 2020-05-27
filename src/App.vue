@@ -34,11 +34,13 @@
 			</ul>
 		</nav>
 
-		<Instructions v-if="view === 'instructions'" />
-		<Accounts v-if="view === 'accounts'" />
-		<Resources v-if="view === 'resources'" />
+		<div class="main pb-5">
+			<Instructions v-if="view === 'instructions'" />
+			<Accounts v-if="view === 'accounts'" />
+			<Resources v-if="view === 'resources'" />
+		</div>
 
-		<footer class="text-center text-light mt-5 p-3 bg-dark">
+		<footer class="text-center text-light p-3 bg-dark">
 			&copy; 2020 Blue Matador, Inc.
 		</footer>
 	</div>
@@ -92,5 +94,8 @@ export default class App extends Vue {
 
 nav .nav-item {
 	margin-right: 20px;
+}
+.main {
+	min-height: calc(100vh - 56px - 56px);
 }
 </style>

@@ -1,18 +1,11 @@
 import Vue from "vue"
 import Vuex from "vuex"
 import { createDirectStore } from "direct-vuex"
+import credentials from "./credentials"
 
 Vue.use(Vuex)
 
-interface RootState {
-	x: boolean
-}
-
-function blankRootState(): RootState {
-	return {
-		x: true,
-	};
-}
+export interface RootState {}
 
 const {
 	store,
@@ -22,11 +15,15 @@ const {
 	moduleGetterContext
 } = createDirectStore({
 	strict: process.env.NODE_ENV !== 'production',
-	state: (): RootState => blankRootState(),
+	state: (): RootState => {
+		return {};
+	},
 	getters: {},
 	mutations: {},
 	actions: {},
-	modules: {},
+	modules: {
+		credentials,
+	},
 });
 
 // Export the direct-store instead of the classic Vuex store.

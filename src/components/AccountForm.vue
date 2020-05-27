@@ -1,0 +1,127 @@
+<template>
+	<div class="container">
+		<h2>{{header}}</h2>
+
+		<form ref="form" novalidate :class="{'was-validated': validated}">
+			<div class="form-group">
+				<label for="AccountFormName">Name</label>
+				<input v-model="name" type="text" class="form-control" id="AccountFormName" placeholder="Account Name" required />
+				<small class="form-text text-muted">
+					Name of this account. Must be unique.
+				</small>
+				<div class="invalid-feedback">Name is required</div>
+			</div>
+			<div class="form-group">
+				<label for="AccountFormAccess">Access ID</label>
+				<input v-model="access" type="text" class="form-control" id="AccountFormAccess" placeholder="Access ID" required minlength="20" maxlength="30" />
+				<small class="form-text text-muted">
+					Create a new <a href="https://console.aws.amazon.com/iam/home#/users" target="_blank">IAM user</a> with ReadOnlyAccess, and enter the Access ID here.
+				</small>
+				<div class="invalid-feedback">Required from IAM</div>
+			</div>
+			<div class="form-group">
+				<label for="AccountFormSecret">Secret Key</label>
+				<input v-model="secret" type="password" class="form-control" id="AccountFormSecret" placeholder="Secret Key" required minlength="40" maxlength="50" />
+				<small class="form-text text-muted">
+					Enter the Secret Key for your readonly IAM user here.
+				</small>
+				<div class="invalid-feedback">Required from IAM</div>
+			</div>
+			<div class="form-group form-check">
+				<input v-model="enabled" type="checkbox" class="form-check-input" id="AccountFormEnabled" />
+				<label class="form-check-label" for="AccountFormEnabled">Enabled</label>
+				<small class="form-text text-muted">
+					Enabled accounts will be crawled and summarized.
+				</small>
+			</div>
+			<div class="text-right">
+				<button type="button" class="ml-2 btn btn-secondary" @click.prevent="close()">Cancel</button>
+				<button type="button" class="ml-2 btn btn-warning" @click.prevent="reset()">Reset</button>
+				<button type="submit" class="ml-2 btn btn-primary" @click.prevent="save()">Submit</button>
+			</div>
+		</form>
+	</div>
+</template>
+
+<script lang="ts">
+import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
+
+@Component
+export default class AccountForm extends Vue {
+	@Prop({type: String, required: false}) id!: string;
+	@Ref('form') readonly formRef!: HTMLInputElement;
+
+	validated: boolean = false;
+
+	name: string = '';
+	access: string = '';
+	secret: string = '';
+	enabled: boolean = true;
+
+	beforeMount(): void {
+		this.reset();
+		this.validated = this.editMode;
+	}
+
+	reset(): void {
+		if (this.editMode) {
+			const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
+			if (cred === undefined) {
+				throw 'bad credential: ' + this.id;
+			}
+
+			this.name = cred.name;
+			this.access = cred.access;
+			this.secret = cred.secret;
+			this.enabled = cred.enabled;
+		}
+		else {
+			this.name = '';
+			this.access = '';
+			this.secret = '';
+			this.enabled = true;
+		}
+	}
+
+	get editMode(): boolean {
+		return this.id !== '';
+	}
+
+	get addMode(): boolean {
+		return this.id === '';
+	}
+
+	get header(): string {
+		if (this.editMode) {
+			return 'Edit ' + this.name;
+		}
+
+		return 'Add New Credential';
+	}
+
+	save(): void {
+		this.validated = true;
+		if (this.formRef.checkValidity()) {
+			const id = this.id !== '' ? this.id : ('' + new Date().getTime());
+
+			this.$store.direct.commit.upsertCredential({
+				id: id,
+				name: this.name,
+				access: this.access,
+				secret: this.secret,
+				enabled: this.enabled,
+				error: undefined,
+			});
+
+			this.close();
+		}
+	}
+
+	close(): void {
+		this.$emit('done', {});
+	}
+}
+</script>
+
+<style scoped lang="scss">
+</style>
