@@ -1,7 +1,9 @@
 import { defineModule } from "direct-vuex"
-import { moduleActionContext, moduleGetterContext } from "./index"
-import SimpleCrypto from "simple-crypto-js";
+import Vue from "vue"
+import store, { moduleActionContext, moduleGetterContext } from "./index"
 import Cookies from 'js-cookie';
+import SimpleCrypto from "simple-crypto-js";
+import { testCredentials as testAWSCredentials } from '../lib/aws/credentials';
 
 export interface AccountsState {
 	all: Account[]
@@ -15,7 +17,8 @@ export interface Account {
 	access: string
 	secret: string
 	enabled: boolean
-	error: string|undefined
+	cloudId?: string
+	error?: string
 }
 
 const mod = defineModule({
@@ -42,6 +45,18 @@ const mod = defineModule({
 			state.all.splice(index, 1, account);
 
 			persistIfKey(state.encryptionKey, state.all);
+			test(account);
+		},
+		accountTested(state, payload: {id: string, error?: string, cloudId?: string}) {
+			state.all.forEach(a => {
+				if (a.id === payload.id) {
+					Vue.set(a, 'error', payload.error);
+
+					if (payload.cloudId) {
+						Vue.set(a, 'cloudId', payload.cloudId);
+					}
+				}
+			});
 		},
 		removeAccount(state, id: string) {
 			const index = state.all.findIndex(a => a.id === id);
@@ -61,6 +76,7 @@ const mod = defineModule({
 
 				loaded.forEach(account => {
 					state.all.splice(state.all.length, 0, account);
+					test(account);
 				});
 
 				state.decrypted = true;
@@ -76,7 +92,14 @@ const mod = defineModule({
 			wipe();
 		},
 	},
-	actions: {},
+	actions: {
+		testAccountCredentials(context, id: string) {
+			const { state } = modActionContext(context);
+			const account = state.all.find(a => a.id === id);
+			if (account === undefined) { return; }
+			test(account);
+		},
+	},
 })
 
 export default mod;
@@ -145,4 +168,18 @@ function persistedCount(): number {
 	else {
 		return Number(Cookies.get(KEY_COUNT)) || 0;
 	}
+}
+
+async function test(account: Account) {
+	testAWSCredentials(account).then((data) => {
+		store.commit.accountTested({
+			id: account.id,
+			cloudId: data.Account,
+		});
+	}).catch((err) => {
+		store.commit.accountTested({
+			id: account.id,
+			error: err.toString(),
+		});
+	});
 }

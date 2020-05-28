@@ -146,7 +146,6 @@ export default class AccountForm extends Vue {
 				access: this.access,
 				secret: this.secret,
 				enabled: this.enabled,
-				error: undefined,
 			});
 
 			if (this.addEncryptionKey) {

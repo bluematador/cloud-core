@@ -40,10 +40,10 @@
 			<table v-if="accounts.length > 0" class="table table-striped table-hover">
 				<thead>
 					<tr>
-						<th>Provider</th>
+						<th>Cloud</th>
+						<th>Account ID</th>
 						<th>Name</th>
-						<th>Access ID</th>
-						<th>Secret Key</th>
+						<th>Credentials</th>
 						<th>Enabled</th>
 						<th>Status</th>
 						<th>Actions</th>
@@ -55,22 +55,27 @@
 								'table-secondary': !account.enabled,
 							}">
 						<td><i class="fab fa-aws"></i></td>
+						<td>{{account.cloudId || ''}}</td>
 						<td>{{account.name}}</td>
-						<td>{{account.access.maskMiddle(3, 3)}}</td>
-						<td>{{account.secret.maskFirst(account.secret.length - 4)}}</td>
+						<td>{{account.access.mask(4)}}</td>
 						<td>
 							<span v-if="account.enabled"><i class="text-success fas fa-check"></i></span>
 							<span v-else><i class="text-danger fas fa-times"></i></span>
 						</td>
 						<td>
 							<span v-if="account.error === undefined"><i class="text-success fas fa-check"></i></span>
-							<span v-else>{{account.error}}</span>
+							<span v-else>
+								<i class="text-danger fas fa-times" style="cursor: help; text-decoration: underline;" :title="account.error"></i>
+							</span>
 						</td>
 						<td>
 							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="editAccount(account.id)">
 								<i class="fas fa-edit"></i> Edit
 							</button>
-							<button class="mr-2 btn btn-sm btn-danger" @click.prevent="deleteAccount(account.id)">
+							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="testAccount(account.id)">
+								<i class="fas fa-heartbeat"></i> Test
+							</button>
+							<button class="btn btn-sm btn-danger" @click.prevent="deleteAccount(account.id)">
 								<i class="fas fa-times"></i> Delete
 							</button>
 						</td>
@@ -124,6 +129,10 @@ export default class Accounts extends Vue {
 
 	deleteAccount(id: string): void {
 		this.$store.direct.commit.removeAccount(id);
+	}
+
+	testAccount(id: string): void {
+		this.$store.direct.dispatch.testAccountCredentials(id);
 	}
 
 	wipeEverything(): void {
