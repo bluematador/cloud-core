@@ -2,7 +2,7 @@
 	<div>
 		<h1 class="p-2">
 			Accounts
-			<span v-if="decrypted">({{credentials.length}})</span>
+			<span v-if="decrypted">({{accounts.length}})</span>
 		</h1>
 
 		<AccountForm v-if="view === 'accountForm'" :id="accountFormId" @done="view = 'main'" />
@@ -11,33 +11,33 @@
 		<div v-else>
 			<div class="text-center mb-4">
 				<div v-if="!decrypted">
-					<p>There are {{encryptedCount}} credentials in local storage. Would you like to decrypt or delete?</p>
+					<p>There are {{encryptedCount}} encrypted accounts in local storage. Would you like to decrypt or delete?</p>
 					<button @click.prevent="view = 'encryptionForm'" class="ml-2 mr-2 btn btn-primary">
 						<i class="fas fa-key"></i>
 						Enter Decryption Key
 					</button>
 					<button @click.prevent="wipeEverything()" class="ml-2 mr-2 btn btn-danger">
 						<i class="fas fa-trash"></i>
-						Delete Encrypted Credentials
+						Delete Encrypted Accounts
 					</button>
 				</div>
 				<div v-else>
-					<button @click.prevent="addCredentialForm()" class="ml-2 mr-2 btn btn-primary">
+					<button @click.prevent="addAccount()" class="ml-2 mr-2 btn btn-primary">
 						<i class="fas fa-plus"></i>
 						Create New
 					</button>
 					<button @click.prevent="view = 'encryptionForm'" class="ml-2 mr-2 btn btn-secondary">
 						<i class="fas fa-lock"></i>
-						{{key === undefined ? 'Encrypt &amp; Save Locally' : 'Change Encryption Key'}}
+						{{encryptionKey === undefined ? 'Encrypt &amp; Save Locally' : 'Change Encryption Key'}}
 					</button>
-					<button @click.prevent="wipeEverything()" class="ml-2 mr-2 btn btn-danger" v-if="key !== undefined">
+					<button @click.prevent="wipeEverything()" class="ml-2 mr-2 btn btn-danger" v-if="encryptionKey !== undefined">
 						<i class="fas fa-trash"></i>
 						Delete Everything
 					</button>
 				</div>
 			</div>
 
-			<table v-if="credentials.length > 0" class="table table-striped table-hover">
+			<table v-if="accounts.length > 0" class="table table-striped table-hover">
 				<thead>
 					<tr>
 						<th>Provider</th>
@@ -50,27 +50,27 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="cred in credentials" :key="cred.id" :class="{
-								'table-danger': cred.error !== undefined,
-								'table-secondary': !cred.enabled,
+					<tr v-for="account in accounts" :key="account.id" :class="{
+								'table-danger': account.error !== undefined,
+								'table-secondary': !account.enabled,
 							}">
 						<td><i class="fab fa-aws"></i></td>
-						<td>{{cred.name}}</td>
-						<td>{{cred.access.maskMiddle(3, 3)}}</td>
-						<td>{{cred.secret.maskFirst(cred.secret.length - 4)}}</td>
+						<td>{{account.name}}</td>
+						<td>{{account.access.maskMiddle(3, 3)}}</td>
+						<td>{{account.secret.maskFirst(account.secret.length - 4)}}</td>
 						<td>
-							<span v-if="cred.enabled"><i class="text-success fas fa-check"></i></span>
+							<span v-if="account.enabled"><i class="text-success fas fa-check"></i></span>
 							<span v-else><i class="text-danger fas fa-times"></i></span>
 						</td>
 						<td>
-							<span v-if="cred.error === undefined"><i class="text-success fas fa-check"></i></span>
-							<span v-else>{{cred.error}}</span>
+							<span v-if="account.error === undefined"><i class="text-success fas fa-check"></i></span>
+							<span v-else>{{account.error}}</span>
 						</td>
 						<td>
-							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="editCredentialForm(cred.id)">
+							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="editAccount(account.id)">
 								<i class="fas fa-edit"></i> Edit
 							</button>
-							<button class="mr-2 btn btn-sm btn-danger" @click.prevent="deleteCredential(cred.id)">
+							<button class="mr-2 btn btn-sm btn-danger" @click.prevent="deleteAccount(account.id)">
 								<i class="fas fa-times"></i> Delete
 							</button>
 						</td>
@@ -96,34 +96,34 @@ export default class Accounts extends Vue {
 	view: 'main'|'encryptionForm'|'accountForm' = 'main';
 	accountFormId: string = '';
 
-	get credentials() {
-		return this.$store.direct.state.credentials.all;
+	get accounts() {
+		return this.$store.direct.state.accounts.all;
 	}
 
-	get key() {
-		return this.$store.direct.state.credentials.key;
+	get encryptionKey() {
+		return this.$store.direct.state.accounts.encryptionKey;
 	}
 
 	get decrypted() {
-		return this.$store.direct.state.credentials.decrypted;
+		return this.$store.direct.state.accounts.decrypted;
 	}
 
 	get encryptedCount() {
-		return this.$store.direct.getters.countCredentialsToDecrypt();
+		return this.$store.direct.getters.countEncryptedAccounts();
 	}
 
-	editCredentialForm(id: string): void {
+	editAccount(id: string): void {
 		this.accountFormId = id;
 		this.view = 'accountForm';
 	}
 
-	addCredentialForm(): void {
+	addAccount(): void {
 		this.accountFormId = '';
 		this.view = 'accountForm';
 	}
 
-	deleteCredential(id: string): void {
-		this.$store.direct.commit.removeCredential(id);
+	deleteAccount(id: string): void {
+		this.$store.direct.commit.removeAccount(id);
 	}
 
 	wipeEverything(): void {

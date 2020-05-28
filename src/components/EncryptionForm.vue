@@ -50,11 +50,11 @@ export default class AccountForm extends Vue {
 	}
 
 	get decryptingMode(): boolean {
-		return !this.$store.direct.state.credentials.decrypted;
+		return !this.$store.direct.state.accounts.decrypted;
 	}
 
 	get updateMode(): boolean {
-		return this.$store.direct.state.credentials.key !== undefined;
+		return this.$store.direct.state.accounts.encryptionKey !== undefined;
 	}
 
 	save(): void {
@@ -71,7 +71,7 @@ export default class AccountForm extends Vue {
 			return;
 		}
 
-		this.$store.direct.commit.setCredentialKey(this.key);
+		this.$store.direct.commit.setEncryptionKey(this.key);
 		this.close();
 	}
 

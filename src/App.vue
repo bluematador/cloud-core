@@ -69,7 +69,7 @@ export default class App extends Vue {
 	mounted(): void {
 		document.addEventListener('click', this.rootClicked);
 
-		if (!this.$store.direct.state.credentials.decrypted) {
+		if (!this.$store.direct.state.accounts.decrypted) {
 			this.view = 'accounts';
 		}
 	}

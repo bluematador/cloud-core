@@ -1,7 +1,7 @@
 import Vue from "vue"
 import Vuex from "vuex"
 import { createDirectStore } from "direct-vuex"
-import credentials from "./credentials"
+import accounts from "./accounts"
 
 Vue.use(Vuex)
 
@@ -22,7 +22,7 @@ const {
 	mutations: {},
 	actions: {},
 	modules: {
-		credentials,
+		accounts,
 	},
 });
 

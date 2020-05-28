@@ -96,15 +96,15 @@ export default class AccountForm extends Vue {
 		this.encryptionKey = '';
 
 		if (this.editMode) {
-			const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
-			if (cred === undefined) {
-				throw 'bad credential: ' + this.id;
+			const account = this.$store.direct.state.accounts.all.find(c => c.id === this.id);
+			if (account === undefined) {
+				throw 'bad account: ' + this.id;
 			}
 
-			this.name = cred.name;
-			this.access = cred.access;
-			this.secret = cred.secret;
-			this.enabled = cred.enabled;
+			this.name = account.name;
+			this.access = account.access;
+			this.secret = account.secret;
+			this.enabled = account.enabled;
 		}
 		else {
 			this.name = '';
@@ -123,16 +123,16 @@ export default class AccountForm extends Vue {
 	}
 
 	get encryptionKeySet(): boolean {
-		return this.$store.direct.state.credentials.key !== undefined;
+		return this.$store.direct.state.accounts.encryptionKey !== undefined;
 	}
 
 	get header(): string {
-		const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
-		if (cred !== undefined) {
-			return 'Edit ' + cred.name;
+		const account = this.$store.direct.state.accounts.all.find(c => c.id === this.id);
+		if (account !== undefined) {
+			return 'Edit ' + account.name;
 		}
 
-		return 'Add New Credential';
+		return 'New Account';
 	}
 
 	save(): void {
@@ -140,7 +140,7 @@ export default class AccountForm extends Vue {
 		if (this.formRef.checkValidity()) {
 			const id = this.id !== '' ? this.id : ('' + new Date().getTime());
 
-			this.$store.direct.commit.upsertCredential({
+			this.$store.direct.commit.upsertAccount({
 				id: id,
 				name: this.name,
 				access: this.access,
@@ -150,7 +150,7 @@ export default class AccountForm extends Vue {
 			});
 
 			if (this.addEncryptionKey) {
-				this.$store.direct.commit.setCredentialKey(this.encryptionKey);
+				this.$store.direct.commit.setEncryptionKey(this.encryptionKey);
 			}
 
 			this.close();
