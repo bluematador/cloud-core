@@ -49,21 +49,13 @@
 
 		<h3>Where is my data stored?</h3>
 		<p>
-			By design, this tool does not store any data. The entire page is standalone, and doesn't transmit credentials or
-			resource information to us.
+			Your resource data is not stored at all. Your credentials are stored in your browser, but only with an encryption key.
 		</p>
-		<p>
-			For convenience, you can opt-in to have a subset of your data stored in the following places:
-		</p>
-		<ul>
-			<li><strong>Cloud Credentials</strong> may be stored as an encrypted cookie.</li>
-			<li><strong>Email Address</strong> may be stored as a cookie and for future updates or marketing materials.</li>
-		</ul>
 
 		<h3>What happens if I close the browser?</h3>
 		<p>
-			When you close the browser, all data that hasn't been saved in cookies will be lost. Any in-progress API calls
-			or aggregations will be cancelled, and you will need to restart the discovery process again.
+			When the browser closes, all your resource data is lost, and only the encrypted local storage remains.
+			The discovery process must restart when you come back.
 		</p>
 
 		<hr />

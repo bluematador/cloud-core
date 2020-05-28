@@ -52,6 +52,9 @@ import Accounts from './components/Accounts.vue';
 import Instructions from './components/Instructions.vue';
 import Resources from './components/Resources.vue';
 
+type View = 'accounts' | 'resources' | 'instructions';
+type Dropdown = '' | 'about';
+
 @Component({
 	components: {
 		Accounts,
@@ -60,11 +63,15 @@ import Resources from './components/Resources.vue';
 	},
 })
 export default class App extends Vue {
-	private view: string = 'instructions';
-	private dropdown: string = '';
+	private view: View = 'instructions';
+	private dropdown: Dropdown = '';
 
 	mounted(): void {
 		document.addEventListener('click', this.rootClicked);
+
+		if (!this.$store.direct.state.credentials.decrypted) {
+			this.view = 'accounts';
+		}
 	}
 
 	beforeDestroy(): void {
@@ -77,11 +84,11 @@ export default class App extends Vue {
 		}
 	}
 
-	private drop(ref: string): void {
+	private drop(ref: Dropdown): void {
 		this.dropdown = ref;
 	}
 
-	private navigate(ref: string): void {
+	private navigate(ref: View): void {
 		this.dropdown = '';
 		this.view = ref;
 	}
