@@ -6,10 +6,11 @@
 			<div class="alert alert-danger" v-if="decryptionFailed">The key you entered failed to decrypt the existing credentials. Please try again.</div>
 			<div class="form-group">
 				<label for="EncryptionFormKey">Encryption Key</label>
-				<input v-model="key" ref="key" type="text" class="form-control" id="EncryptionFormKey" placeholder="Encryption Key" required minlength="1" />
+				<input v-model="key" ref="key" type="password" class="form-control" id="EncryptionFormKey" placeholder="Encryption Key" required minlength="1" />
 				<small class="form-text text-muted">
-					All credentials will be encrypted using this key. The credentials will be stored on your local machine.
-					Lost keys cannot be retrieved.
+					All credentials will be encrypted using this key. Lost keys cannot be retrieved.<br />
+					Credentials are never transmitted, except in direct API calls to the provider.<br />
+					Encryption is through <a tabindex="-1" href="https://github.com/danang-id/simple-crypto-js" target="_blank">simple-crypto-js</a>, which uses AES with 256bit keys over 100 iterations.
 				</small>
 				<div class="invalid-feedback">Encryption key is required and should be a strong password.</div>
 			</div>

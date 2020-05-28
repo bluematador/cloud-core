@@ -16,7 +16,7 @@
 						<i class="fas fa-key"></i>
 						Enter Decryption Key
 					</button>
-					<button @click.prevent="deleteCredentialStorage()" class="ml-2 mr-2 btn btn-danger">
+					<button @click.prevent="wipeEverything()" class="ml-2 mr-2 btn btn-danger">
 						<i class="fas fa-trash"></i>
 						Delete Encrypted Credentials
 					</button>
@@ -30,7 +30,7 @@
 						<i class="fas fa-lock"></i>
 						{{key === undefined ? 'Encrypt &amp; Save Locally' : 'Change Encryption Key'}}
 					</button>
-					<button @click.prevent="deleteCredentialStorage()" class="ml-2 mr-2 btn btn-danger" v-if="key !== undefined">
+					<button @click.prevent="wipeEverything()" class="ml-2 mr-2 btn btn-danger" v-if="key !== undefined">
 						<i class="fas fa-trash"></i>
 						Delete Everything
 					</button>
@@ -126,8 +126,8 @@ export default class Accounts extends Vue {
 		this.$store.direct.commit.removeCredential(id);
 	}
 
-	deleteCredentialStorage(): void {
-		this.$store.direct.commit.deleteCredentialStorage();
+	wipeEverything(): void {
+		this.$store.direct.commit.wipeEverything();
 	}
 }
 </script>

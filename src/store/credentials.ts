@@ -69,8 +69,9 @@ const mod = defineModule({
 			state.key = key;
 			persist(key, state.all);
 		},
-		deleteCredentialStorage(state) {
+		wipeEverything(state) {
 			state.key = undefined;
+			state.all.splice(0, state.all.length);
 			state.decrypted = true;
 			wipe();
 		},

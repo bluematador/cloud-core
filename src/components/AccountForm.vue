@@ -34,6 +34,26 @@
 					Enabled accounts will be crawled and summarized.
 				</small>
 			</div>
+			<div v-if="!encryptionKeySet">
+				<hr class="encryption-sep" />
+				<div class="form-group form-check">
+					<input v-model="addEncryptionKey" type="checkbox" class="form-check-input" id="AccountFormAddEncryptionKey" />
+					<label class="form-check-label" for="AccountFormAddEncryptionKey">Encrypt All Credentials &amp; Save Locally</label>
+					<small class="form-text text-muted">
+						You can specify the encryption key and save all your credentials for next time.
+					</small>
+				</div>
+				<div class="form-group" v-if="addEncryptionKey">
+					<label for="EncryptionFormKey">Encryption Key</label>
+					<input v-model="encryptionKey" ref="key" type="password" class="form-control" id="EncryptionFormKey" placeholder="Encryption Key" required minlength="1" />
+					<small class="form-text text-muted">
+						All credentials will be encrypted using this key. Lost keys cannot be retrieved.<br />
+						Credentials are never transmitted, except in direct API calls to the provider.<br />
+						Encryption is through <a tabindex="-1" href="https://github.com/danang-id/simple-crypto-js" target="_blank">simple-crypto-js</a>, which uses AES with 256bit keys over 100 iterations.
+					</small>
+					<div class="invalid-feedback">Encryption key is required and should be a strong password.</div>
+				</div>
+			</div>
 			<div class="text-right">
 				<button type="button" class="ml-2 btn btn-secondary" @click.prevent="close()">Cancel</button>
 				<button type="button" class="ml-2 btn btn-warning" @click.prevent="reset()">Reset</button>
@@ -54,6 +74,9 @@ export default class AccountForm extends Vue {
 
 	validated: boolean = false;
 
+	addEncryptionKey: boolean = false;
+	encryptionKey: string = '';
+
 	name: string = '';
 	access: string = '';
 	secret: string = '';
@@ -69,6 +92,9 @@ export default class AccountForm extends Vue {
 	}
 
 	reset(): void {
+		this.addEncryptionKey = false;
+		this.encryptionKey = '';
+
 		if (this.editMode) {
 			const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
 			if (cred === undefined) {
@@ -96,6 +122,10 @@ export default class AccountForm extends Vue {
 		return this.id === '';
 	}
 
+	get encryptionKeySet(): boolean {
+		return this.$store.direct.state.credentials.key !== undefined;
+	}
+
 	get header(): string {
 		const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
 		if (cred !== undefined) {
@@ -119,6 +149,10 @@ export default class AccountForm extends Vue {
 				error: undefined,
 			});
 
+			if (this.addEncryptionKey) {
+				this.$store.direct.commit.setCredentialKey(this.encryptionKey);
+			}
+
 			this.close();
 		}
 	}
@@ -130,4 +164,7 @@ export default class AccountForm extends Vue {
 </script>
 
 <style scoped lang="scss">
+hr.encryption-sep {
+	border-top: 2px dashed #000;
+}
 </style>
