@@ -98,4 +98,8 @@ nav .nav-item {
 .main {
 	min-height: calc(100vh - 56px - 56px);
 }
+
+button i {
+	margin-right: 8px;
+}
 </style>

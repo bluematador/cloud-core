@@ -5,7 +5,7 @@
 		<form ref="form" novalidate :class="{'was-validated': validated}">
 			<div class="form-group">
 				<label for="AccountFormName">Name</label>
-				<input v-model="name" type="text" class="form-control" id="AccountFormName" placeholder="Account Name" required />
+				<input v-model="name" ref="name" type="text" class="form-control" id="AccountFormName" placeholder="Account Name" required />
 				<small class="form-text text-muted">
 					Name of this account. Must be unique.
 				</small>
@@ -15,7 +15,7 @@
 				<label for="AccountFormAccess">Access ID</label>
 				<input v-model="access" type="text" class="form-control" id="AccountFormAccess" placeholder="Access ID" required minlength="20" maxlength="30" />
 				<small class="form-text text-muted">
-					Create a new <a href="https://console.aws.amazon.com/iam/home#/users" target="_blank">IAM user</a> with ReadOnlyAccess, and enter the Access ID here.
+					Create a new <a tabindex="-1" href="https://console.aws.amazon.com/iam/home#/users" target="_blank">IAM user</a> with ReadOnlyAccess, and enter the Access ID here.
 				</small>
 				<div class="invalid-feedback">Required from IAM</div>
 			</div>
@@ -50,6 +50,7 @@ import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
 export default class AccountForm extends Vue {
 	@Prop({type: String, required: false}) id!: string;
 	@Ref('form') readonly formRef!: HTMLInputElement;
+	@Ref('name') readonly nameRef!: HTMLElement;
 
 	validated: boolean = false;
 
@@ -61,6 +62,10 @@ export default class AccountForm extends Vue {
 	beforeMount(): void {
 		this.reset();
 		this.validated = this.editMode;
+	}
+
+	mounted(): void {
+		this.nameRef.focus();
 	}
 
 	reset(): void {
@@ -92,8 +97,9 @@ export default class AccountForm extends Vue {
 	}
 
 	get header(): string {
-		if (this.editMode) {
-			return 'Edit ' + this.name;
+		const cred = this.$store.direct.state.credentials.all.find(c => c.id === this.id);
+		if (cred !== undefined) {
+			return 'Edit ' + cred.name;
 		}
 
 		return 'Add New Credential';
