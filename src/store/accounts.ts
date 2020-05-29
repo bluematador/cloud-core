@@ -135,7 +135,11 @@ function load(key: string): undefined | Account[] {
 
 	const crypto = new SimpleCrypto(key);
 	try {
-		return crypto.decrypt(encrypted) as Account[];
+		const accounts = crypto.decrypt(encrypted) as Account[];
+		accounts.forEach(account => {
+			delete account.error;
+		});
+		return accounts;
 	}
 	catch (e) {
 		return undefined;
