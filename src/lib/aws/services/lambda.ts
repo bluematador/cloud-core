@@ -3,7 +3,7 @@ import AWS from 'aws-sdk';
 import RegionWorker, { CancelToken } from '../region-worker';
 import { RegionalService } from '../service';
 
-export const LambdaName: string = 'Lambda';
+const Name: string = 'Lambda';
 
 export default class LambdaService extends RegionalService<LambdaWorker> {
 	constructor(readonly account: Account) {
@@ -33,7 +33,7 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 	}
 
 	get service(): string {
-		return LambdaName;
+		return Name;
 	}
 
 	protected regionFactory(account: Account, region: string): LambdaWorker {
@@ -68,7 +68,7 @@ class LambdaWorker extends RegionWorker {
 						id: f.FunctionArn || '',
 						accountId: this.account.model.id,
 						name: f.FunctionName || '',
-						service: LambdaName,
+						service: Name,
 						region: this.region,
 						url: 'https://console.aws.amazon.com/lambda/home?region=' + this.region + '#/functions/' + encodeURIComponent(f.FunctionName || ''),
 						details: {
