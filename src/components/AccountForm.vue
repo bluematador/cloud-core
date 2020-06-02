@@ -65,6 +65,7 @@
 
 <script lang="ts">
 import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
+import { Account } from '../store/accounts';
 
 @Component
 export default class AccountForm extends Vue {
@@ -91,16 +92,25 @@ export default class AccountForm extends Vue {
 		this.nameRef.focus();
 	}
 
-	reset(): void {
-		this.addEncryptionKey = false;
-		this.encryptionKey = '';
-
+	get original(): Account | undefined {
 		if (this.editMode) {
 			const account = this.$store.direct.state.accounts.all.find(c => c.id === this.id);
 			if (account === undefined) {
 				throw 'bad account: ' + this.id;
 			}
 
+			return account;
+		}
+
+		return undefined;
+	}
+
+	reset(): void {
+		this.addEncryptionKey = false;
+		this.encryptionKey = '';
+
+		const account = this.original;
+		if (account) {
 			this.name = account.name;
 			this.access = account.access;
 			this.secret = account.secret;
@@ -127,7 +137,7 @@ export default class AccountForm extends Vue {
 	}
 
 	get header(): string {
-		const account = this.$store.direct.state.accounts.all.find(c => c.id === this.id);
+		const account = this.original;
 		if (account !== undefined) {
 			return 'Edit ' + account.name;
 		}
@@ -138,14 +148,15 @@ export default class AccountForm extends Vue {
 	save(): void {
 		this.validated = true;
 		if (this.formRef.checkValidity()) {
-			const id = this.id !== '' ? this.id : ('' + new Date().getTime());
+			const account = this.original;
 
 			this.$store.direct.commit.upsertAccount({
-				id: id,
+				id: account ? account.id : ('' + new Date().getTime()),
 				name: this.name,
 				access: this.access,
 				secret: this.secret,
 				enabled: this.enabled,
+				cloudId: account ? account.cloudId : undefined,
 			});
 
 			if (this.addEncryptionKey) {
