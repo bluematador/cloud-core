@@ -74,8 +74,6 @@ export class Account {
 				id: this.model.id,
 				error: err.toString(),
 			});
-
-			throw err;
 		});
 	}
 
