@@ -4,34 +4,58 @@ import Service from './service';
 import store, { AppStore } from '../../store';
 import { Account as AccountModel } from '../../store/accounts';
 
+AWS.config.update({
+	maxRetries: 5,
+});
+
 export class Account {
 	private _model: AccountModel;
 	private _credentials: AWS.Credentials;
-	readonly lambda: Services.Lambda;
+
 	readonly services: Service<any>[];
+	readonly lambda: Services.Lambda;
+
 	readonly store: AppStore;
 
 	constructor(model: AccountModel) {
 		this._model = model;
+		this._credentials = new AWS.Credentials(this._model.access, this._model.secret);
 		this.store = store;
-		this.services = [];
-		this._credentials = this.newCredentials();
 
+		this.services = [];
 		this.lambda = new Services.Lambda(this);
 		this.services.push(this.lambda);
 	}
 
-	private newCredentials(): AWS.Credentials {
-		return new AWS.Credentials(this.model.access, this.model.secret);
-	}
-
-	set model(model: AccountModel) {
+	updateModel(model: AccountModel): void {
+		const old = this._model;
 		this._model = model;
-		this._credentials = this.newCredentials();
+
+		if (old.access !== model.access || old.secret !== model.secret) {
+			this._credentials = new AWS.Credentials(this._model.access, this._model.secret);
+			this.services.forEach(service => service.updatedCredentials(this._credentials));
+		}
+
+		if (old.cloudId !== model.cloudId) {
+			this.stop();
+			this.purge();
+		}
+
+		if (model.error !== undefined) {
+			this.stop();
+		}
+
+		if (model.enabled && model.error === undefined) {
+			this.start();
+		}
 	}
 
 	get model(): AccountModel {
 		return this._model;
+	}
+
+	get credentials(): AWS.Credentials {
+		return this._credentials;
 	}
 
 	async test(): Promise<void> {
@@ -53,11 +77,6 @@ export class Account {
 
 			throw err;
 		});
-	}
-
-	testThenStart(): void {
-		this.stop();
-		this.test().then(() => this.start());
 	}
 
 	start(): void {
@@ -95,7 +114,9 @@ export class Account {
 			throw 'cannot purge while actively discovering';
 		}
 
-		this.services.forEach(service => service.purge());
+		this.stop();
+		this.resetProgress();
+		this.store.commit.deleteAccountResources(this.model.id);
 	}
 
 	get started(): boolean {
@@ -107,7 +128,7 @@ export class Account {
 	}
 
 	get running(): boolean {
-		return this.services.every(s => s.running);
+		return this.services.some(s => s.running);
 	}
 }
 

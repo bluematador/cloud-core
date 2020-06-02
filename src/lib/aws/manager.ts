@@ -5,7 +5,7 @@ export class Manager {
 	private accounts = new Map<string, Account>();
 
 	add(account: Account): void {
-		this.delete(account.model.id);
+		this.kill(account.model.id);
 		this.accounts.set(account.model.id, account);
 	}
 
@@ -13,7 +13,7 @@ export class Manager {
 		return Maybe.fromNullable(this.accounts.get(id));
 	}
 
-	delete(id: string): void {
+	kill(id: string): void {
 		this.get(id).map(account => {
 			account.stop();
 			account.purge();
@@ -24,7 +24,7 @@ export class Manager {
 
 	clear(): void {
 		[...this.accounts.keys()].forEach(id => {
-			this.delete(id);
+			this.kill(id);
 		});
 	}
 }

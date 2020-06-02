@@ -21,33 +21,20 @@ export interface Account {
 	error?: string
 }
 
-function newDiscovery(account: Account): void {
-	const discovery = new AWSDiscovery(account);
-	AWSDiscoveryManager.add(discovery);
-	discovery.test();
-}
+function manageDiscoveryAccount(account: Account): void {
+	// need to use a copy because vuex does weird things
+	const copy = JSON.parse(JSON.stringify(account));
 
-function updateDiscovery(old: undefined | Account, account: Account): void {
-	if (old === undefined) {
-		newDiscovery(account);
-		return;
-	}
-
-	const discovery = AWSDiscoveryManager.get(account.id).unsafeCoerce();
-	if (old.cloudId !== undefined && old.cloudId !== account.cloudId) {
-		discovery.stop();
-		discovery.purge();
-	}
-
-	if (account.error) {
-		discovery.stop();
-	}
-
-	discovery.model = account;
-
-	if (account.enabled && !account.error) {
-		discovery.start();
-	}
+	AWSDiscoveryManager.get(copy.id).ifNothing(() => {
+		const discovery = new AWSDiscovery(copy);
+		AWSDiscoveryManager.add(discovery);
+		discovery.test();
+	}).ifJust((discovery) => {
+		// do asynchronously to avoid test -> error loop
+		setTimeout(() => {
+			discovery.updateModel(copy);
+		}, 1);
+	});
 }
 
 const mod = defineModule({
@@ -82,7 +69,7 @@ const mod = defineModule({
 			}
 
 			// update discovery workers
-			updateDiscovery(original, account);
+			manageDiscoveryAccount(account);
 		},
 		accountTested(state, payload: {id: string, error?: string, cloudId?: string}) {
 			const account = state.all.find(a => a.id === payload.id);
@@ -95,8 +82,8 @@ const mod = defineModule({
 					Vue.set(account, 'cloudId', payload.cloudId);
 				}
 
-				// update discovery real quick
-				updateDiscovery(original, account);
+				// update discovery workers
+				manageDiscoveryAccount(account);
 			}
 		},
 		removeAccount(state, id: string) {
@@ -109,7 +96,7 @@ const mod = defineModule({
 				Storage.save(state.encryptionKey, state.all);
 			}
 
-			AWSDiscoveryManager.delete(id);
+			AWSDiscoveryManager.kill(id);
 		},
 		setEncryptionKey(state, key: string) {
 			if (!state.decrypted) {
@@ -124,7 +111,7 @@ const mod = defineModule({
 
 				loaded.forEach(account => {
 					state.all.splice(state.all.length, 0, account);
-					updateDiscovery(undefined, account);
+					manageDiscoveryAccount(account);
 				});
 
 				state.decrypted = true;

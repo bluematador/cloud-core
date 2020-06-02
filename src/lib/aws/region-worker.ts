@@ -1,7 +1,9 @@
+import AWS from 'aws-sdk';
 import PriorityQueue from '../datastructures/priority-queue';
 import { Maybe } from 'purify-ts/Maybe';
+import { PromiseResult } from 'aws-sdk/lib/request';
 
-const WorkDelay = 500;
+const WorkDelay = 1000;
 
 export abstract class RegionWorker {
 	private queue = new PriorityQueue<QueueItem>();
@@ -10,12 +12,15 @@ export abstract class RegionWorker {
 	private _started: boolean = false;
 	private processing: boolean = false;
 	private timeout: Maybe<number> = Maybe.empty();
-	private cancelToken: CancelToken = { cancelled: false };
+	private cancel: CancelToken = 0;
+
+	abstract get region(): string;
+	abstract updatedCredentials(credentials: AWS.Credentials): void;
 
 	abstract fillQueue(): void;
-	abstract doPurge(): void;
+	abstract reset(): void;
 
-	protected enqueue(priority: number, fn: () => Promise<any>): void {
+	protected enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
 		this.queue.push({priority, fn});
 
 		if (this._started) {
@@ -23,19 +28,40 @@ export abstract class RegionWorker {
 		}
 	}
 
-	private processQueue(): void {
-		this.queue.pop().ifJust(one => {
-			this.processing = true;
-
-			one.fn().finally(() => {
-				this.processing = false;
-				this.ensureTimeout();
+	protected enqueuePagedRequest<D, E>(priority: number, request: AWS.Request<D, E>, handler: (data: D) => any): void {
+		this.enqueue(priority, (token) => {
+			return request.promise().then(response => {
+				this.handlePagedResponse(priority, response, token, handler);
 			});
 		});
 	}
 
-	protected watchForCancels<R>(fn: (token: CancelToken) => R): R {
-		return fn(this.cancelToken);
+	protected handlePagedResponse<D, E>(priority: number, response: PromiseResult<D, E>, token: CancelToken, handler: (data: D) => any): void {
+		if (this.cancelled(token)) {
+			return;
+		}
+
+		handler(response);
+
+		const nextPage = response.$response.nextPage();
+		if (nextPage) {
+			this.enqueue(priority, (newToken) => {
+				return nextPage.promise().then(response => {
+					this.handlePagedResponse(priority, response, newToken, handler);
+				});
+			});
+		}
+	}
+
+	private processQueue(): void {
+		this.queue.pop().ifJust(one => {
+			this.processing = true;
+
+			one.fn(this.cancel).finally(() => {
+				this.processing = false;
+				this.ensureTimeout();
+			});
+		});
 	}
 
 	private discardTimeout(): void {
@@ -54,6 +80,10 @@ export abstract class RegionWorker {
 			}, WorkDelay);
 			this.timeout = Maybe.of(interval);
 		}
+	}
+
+	protected cancelled(token: CancelToken): boolean {
+		return this.cancel !== token;
 	}
 
 	start(): void {
@@ -86,13 +116,7 @@ export abstract class RegionWorker {
 
 		this.queueFilled = false;
 		this.queue.clear();
-		this.cancelToken.cancelled = true;
-		this.cancelToken = { cancelled: false };
-	}
-
-	purge(): void {
-		this.resetProgress();
-		this.doPurge();
+		this.cancel++;
 	}
 
 	get started(): boolean {
@@ -112,9 +136,7 @@ export default RegionWorker;
 
 interface QueueItem {
 	readonly priority: number
-	fn: () => Promise<any>
+	fn: (cancel: CancelToken) => Promise<any>
 }
 
-interface CancelToken {
-	cancelled: boolean
-}
+export type CancelToken = number;

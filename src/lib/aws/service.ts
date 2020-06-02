@@ -1,19 +1,27 @@
-import { Maybe } from 'purify-ts/Maybe';
 import Account from './account';
+import AWS from 'aws-sdk';
 import RegionWorker from './region-worker';
+import { Maybe } from 'purify-ts/Maybe';
 
 export abstract class Service<T extends RegionWorker> {
 	readonly regions: {[region: string]: T};
 
-	constructor(supportedRegions: string[]) {
+	constructor(account: Account, supportedRegions: string[]) {
 		this.regions = {};
 		supportedRegions.forEach(region => {
-			this.regions[region] = this.createRegion(region);
+			this.regions[region] = this.regionFactory(account, region);
 		});
 	}
 
+	abstract get service(): string;
 	abstract get account(): Account;
-	protected abstract createRegion(region: string): T;
+	protected abstract regionFactory(account: Account, region: string): T;
+
+	updatedCredentials(credentials: AWS.Credentials): void {
+		for (const id in this.regions) {
+			this.regions[id].updatedCredentials(credentials);
+		}
+	}
 
 	getRegion(name: string): Maybe<T> {
 		return Maybe.fromNullable(this.regions[name]);
@@ -52,19 +60,6 @@ export abstract class Service<T extends RegionWorker> {
 		}
 	}
 
-	/**
-	 * deletes all progress and all vuex data
-	 */
-	purge(): void {
-		if (this.running) {
-			throw 'cannot purge while actively discovering';
-		}
-
-		for (const id in this.regions) {
-			this.regions[id].purge();
-		}
-	}
-
 	get started(): boolean {
 		return Object.values(this.regions).every(r => r.started);
 	}
@@ -79,8 +74,8 @@ export abstract class Service<T extends RegionWorker> {
 }
 
 export abstract class RegionalService<T extends RegionWorker> extends Service<T> {
-	constructor(supportedRegions: string[]) {
-		super(supportedRegions);
+	constructor(account: Account, supportedRegions: string[]) {
+		super(account, supportedRegions);
 	}
 
 	get afSouth1(): Maybe<T> { return this.getRegion('af-south-1'); }
@@ -109,8 +104,8 @@ export abstract class RegionalService<T extends RegionWorker> extends Service<T>
 export const Global = 'global';
 
 export abstract class GlobalService<T extends RegionWorker> extends Service<T> {
-	constructor() {
-		super([Global]);
+	constructor(account: Account) {
+		super(account, [Global]);
 	}
 
 	get global(): T { return this.getRegion(Global).unsafeCoerce(); }

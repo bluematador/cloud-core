@@ -2,6 +2,7 @@ import Vue from "vue"
 import Vuex from "vuex"
 import { createDirectStore } from "direct-vuex"
 import accounts from "./accounts"
+import resources from "./resources"
 
 Vue.use(Vuex)
 
@@ -23,6 +24,7 @@ const {
 	actions: {},
 	modules: {
 		accounts,
+		resources,
 	},
 });
 
