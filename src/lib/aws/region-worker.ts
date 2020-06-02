@@ -17,8 +17,8 @@ export abstract class RegionWorker {
 	abstract get region(): string;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
 
-	abstract fillQueue(): void;
-	abstract reset(): void;
+	protected abstract fillQueue(): void;
+	protected abstract reset(): void;
 
 	protected enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
 		this.queue.push({priority, fn});

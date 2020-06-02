@@ -60,7 +60,7 @@ class LambdaWorker extends RegionWorker {
 		});
 	}
 
-	fillQueue(): void {
+	protected fillQueue(): void {
 		this.enqueuePagedRequest(0, this.api.listFunctions(), data => {
 			if (data.Functions) {
 				this.account.store.commit.addResources(data.Functions.map(f => {
@@ -82,7 +82,7 @@ class LambdaWorker extends RegionWorker {
 		});
 	}
 
-	reset(): void {
+	protected reset(): void {
 		// nothing to do
 	}
 }
