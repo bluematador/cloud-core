@@ -1,6 +1,19 @@
 <template>
 	<div>
-		<h1>Resources</h1>
+		<h1 class="p-2">Resources</h1>
+
+		<div class="text-right p-3">
+			<span class="mr-3">Found {{resources.length}} Resources</span>
+			<span class="mr-1">Page Size:</span>
+			<div class="d-inline-block">
+				<div class="btn-group">
+					<button v-for="n in pageSizeOptions" :key="n"
+							:disabled="pageSize === n"
+							@click="changePageSize(n)"
+							class="btn btn-primary">{{n}}</button>
+				</div>
+			</div>
+		</div>
 
 		<table class="table table-striped table-hover table-bordered">
 			<thead>
@@ -15,7 +28,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="resource in resources" :key="resource.id" :class="{'table-danger': resource.error !== undefined}">
+				<tr v-for="resource in pagedResources" :key="resource.id" :class="{'table-danger': resource.error !== undefined}">
 					<td>
 						<i class="fab fa-aws"></i>
 						{{account(resource.accountId).name}}
@@ -63,20 +76,54 @@
 				</tr>
 			</tbody>
 		</table>
+
+		<div class="mt-3 mb-3">
+			<Pages :page="page" :total="pageCount" @page="changePage" />
+		</div>
 	</div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import Pages from './Pages.vue';
 
-@Component
+@Component({
+	components: {
+		Pages,
+	},
+})
 export default class Resources extends Vue {
+	pageSize: number = 10;
+	page: number = 0;
+
 	get resources() {
 		return this.$store.direct.state.resources.all.sortBy(r => r.name);
 	}
 
+	get pageCount(): number {
+		return Math.ceil(this.resources.length / this.pageSize);
+	}
+
+	get pagedResources() {
+		return this.resources.slice(this.page * this.pageSize, (this.page + 1) * this.pageSize);
+	}
+
+	get pageSizeOptions() {
+		return [10, 25, 50, 100];
+	}
+
 	account(id: string) {
 		return this.$store.direct.state.accounts.all.find(a => a.id === id);
+	}
+
+	changePage(newPage: number) {
+		this.page = newPage;
+		window.scrollTo(0, 0);
+	}
+
+	changePageSize(size: number) {
+		this.page = 0;
+		this.pageSize = size;
 	}
 }
 </script>

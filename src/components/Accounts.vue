@@ -1,9 +1,6 @@
 <template>
 	<div>
-		<h1 class="p-2">
-			Accounts
-			<span v-if="decrypted">({{accounts.length}})</span>
-		</h1>
+		<h1 class="p-2">Accounts</h1>
 
 		<AccountForm v-if="view === 'accountForm'" :id="accountFormId" @done="view = 'main'" />
 		<EncryptionForm v-else-if="view === 'encryptionForm'" @done="view = 'main'" />
@@ -37,6 +34,7 @@
 				</div>
 			</div>
 
+			<div class="text-right p-3">{{accounts.length}} Accounts</div>
 			<table v-if="accounts.length > 0" class="table table-striped table-hover">
 				<thead>
 					<tr>
