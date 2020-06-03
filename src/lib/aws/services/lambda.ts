@@ -42,6 +42,7 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 			'There is a cost for bandwidth, but AWS does not expose usage.',
 			'Lambda @Edge not implemented yet.',
 			'Cannot see history of provisioned concurrency, so RequestedProvisionedConcurrentExecutions is used for all calculations.',
+			'Amazon rounds function duration up to 100ms increments. We round the average up to simulate. Actual prices may be higher or lower.'
 		];
 	}
 
@@ -119,71 +120,33 @@ export class LambdaWorker extends RegionWorker {
 				dimensions: { 'FunctionName': lambda.FunctionName || '' },
 		}]);
 
-		// calculate pricing
 		Promise.all([provisioned, usage, this.prices]).then(([provisioned, usage, prices]) => {
 			const memoryGB = (lambda.MemorySize || 0) / 1024;
 
-			const invocationUsage = {
-				last: usage.metrics['invocations'].last.sum,
-				avg1h: usage.metrics['invocations'].avg1h.sum,
-				avg1d: usage.metrics['invocations'].avg1d.sum,
-				avg1w: usage.metrics['invocations'].avg1w.sum,
-			};
+			const calculations = this.calculationsForResource((key, seconds) => {
+				// https://aws.amazon.com/lambda/pricing/
+				const datapoints = usage.metrics['invocations'][key].count;
 
-			const computeUsage = {
-				unit: 'GB-seconds',
-				last: memoryGB * invocationUsage.last * usage.metrics['duration'].last.averageNonZero / 1000,
-				avg1h: memoryGB * invocationUsage.avg1h * usage.metrics['duration'].avg1h.averageNonZero / 1000,
-				avg1d: memoryGB * invocationUsage.avg1d * usage.metrics['duration'].avg1d.averageNonZero / 1000,
-				avg1w: memoryGB * invocationUsage.avg1w * usage.metrics['duration'].avg1w.averageNonZero / 1000,
-			};
+				const duration = Math.ceil(usage.metrics['duration'][key].averageNonZero / 100) / 10; // rounds to 100ms, then converts to seconds
 
-			const provisionedUsage = {
-				unit: 'GB-seconds',
-				last: provisioned * memoryGB * usage.period * usage.metrics['duration'].last.count,
-				avg1h: provisioned * memoryGB * usage.period * usage.metrics['duration'].avg1h.count,
-				avg1d: provisioned * memoryGB * usage.period * usage.metrics['duration'].avg1d.count,
-				avg1w: provisioned * memoryGB * usage.period * usage.metrics['duration'].avg1w.count,
-			};
+				const invocationUsage = usage.metrics['invocations'][key].sum;
+				const provisionedUsage = provisioned * memoryGB * usage.period * datapoints;
+				const computeUsage = memoryGB * invocationUsage * duration;
 
-			const invocationCost = {
-				last: invocationUsage.last * prices['Requests'] * (3600 / (usage.period * usage.metrics['duration'].last.count)),
-				avg1h: invocationUsage.avg1h * prices['Requests'] * (3600 / (usage.period * usage.metrics['duration'].avg1h.count)),
-				avg1d: invocationUsage.avg1d * prices['Requests'] * (3600 / (usage.period * usage.metrics['duration'].avg1d.count)),
-				avg1w: invocationUsage.avg1w * prices['Requests'] * (3600 / (usage.period * usage.metrics['duration'].avg1w.count)),
-			}
-
-			// need to round to nearest 100ms for duration
-			const computePrice = provisioned > 0 ? prices['Provisioned-Duration'] : prices['Duration'];
-			const computeCost = {
-				last: computeUsage.last * computePrice * (3600 / (usage.period * usage.metrics['duration'].last.count)),
-				avg1h: computeUsage.avg1h * computePrice * (3600 / (usage.period * usage.metrics['duration'].avg1h.count)),
-				avg1d: computeUsage.avg1d * computePrice * (3600 / (usage.period * usage.metrics['duration'].avg1d.count)),
-				avg1w: computeUsage.avg1w * computePrice * (3600 / (usage.period * usage.metrics['duration'].avg1w.count)),
-			}
-
-			const provisionedCost = {
-				last: provisionedUsage.last * prices['Provisioned-Concurrency'] * (3600 / (usage.period * usage.metrics['duration'].last.count)),
-				avg1h: provisionedUsage.avg1h * prices['Provisioned-Concurrency'] * (3600 / (usage.period * usage.metrics['duration'].avg1h.count)),
-				avg1d: provisionedUsage.avg1d * prices['Provisioned-Concurrency'] * (3600 / (usage.period * usage.metrics['duration'].avg1d.count)),
-				avg1w: provisionedUsage.avg1w * prices['Provisioned-Concurrency'] * (3600 / (usage.period * usage.metrics['duration'].avg1w.count)),
-			}
+				return {
+					Invocations: this.normalizeCalculation(invocationUsage, prices['Requests'], seconds),
+					Compute: this.normalizeCalculation(provisioned === 0 ? computeUsage : 0, prices['Duration'], seconds, 'GB-seconds'),
+					ProvisionedCompute: this.normalizeCalculation(provisioned === 0 ? 0 : computeUsage, prices['Provisioned-Duration'], seconds, 'GB-seconds'),
+					ProvisionedConcurrency: this.normalizeCalculation(provisionedUsage, prices['Provisioned-Concurrency'], seconds),
+				};
+			});
 
 			this.account.store.commit.updateResource({
 				id: lambda.FunctionArn || '',
 				details: {
 					ProvisionedConcurrency: provisioned,
 				},
-				usage: {
-					Invocations: invocationUsage,
-					Compute: computeUsage,
-					Provisioned: provisionedUsage,
-				},
-				costs: {
-					Invocations: invocationCost,
-					Compute: computeCost,
-					Provisioned: provisionedCost,
-				},
+				calculations,
 			});
 		}).catch(e => {
 			this.account.store.commit.updateResource({

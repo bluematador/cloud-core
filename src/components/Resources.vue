@@ -105,8 +105,8 @@
 									{{resource.error}}
 								</td>
 								<td v-if="resource.error === undefined">
-									<div v-if="resource.costs['total'] !== undefined">
-										{{costFormat.format(Number(forecast) * resource.costs['total'][costIndex])}}
+									<div v-if="resource.calculations">
+										{{costFormat.format(forecast * resource.calculations[costIndex]['total'].subtotal1h)}}
 									</div>
 									<div v-else class="spinner-border spinner-border-sm"></div>
 								</td>
@@ -195,7 +195,7 @@ export default class Resources extends Vue {
 				sorted = filtered.sortBy(r => r.name.toLowerCase());
 				break;
 			case 'forecast':
-				sorted = filtered.sortNumBy(r => r.costs['total'] ? r.costs['total'][this.costIndex] : -1);
+				sorted = filtered.sortNumBy(r => r.calculations ? r.calculations[this.costIndex]['total'].subtotal1h : -1);
 				break;
 		}
 

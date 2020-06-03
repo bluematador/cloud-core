@@ -13,28 +13,33 @@ export interface Resource {
 	service: string
 	region: string
 	url: string
-	details: {[key: string]: string|number}
+	details: {[key: string]: Detail}
 	error?: any
-
-	/* actual usage in the specified timeframe */
-	usage: {
-		[key: string]: UsageBreakdown
-	}
-
-	/* $/hr, extrapolated from the timeframe */
-	costs: {
-		[key: string]: Breakdown
-	}
+	calculations?: Calculations
 }
 
-export interface Breakdown {
-	last: number
-	avg1h: number
-	avg1d: number
-	avg1w: number
+export type Detail = string|number;
+export type AggregationTimeframe = 'last'|'avg1h'|'avg1d'|'avg1w';
+const aggregationTimeframes: AggregationTimeframe[] = ['last', 'avg1h', 'avg1d', 'avg1w'];
+
+export interface Calculations {
+	last: Calculation
+	avg1h: Calculation
+	avg1d: Calculation
+	avg1w: Calculation
 }
 
-export type UsageBreakdown = Breakdown & { unit?: string }
+export interface Calculation {
+	[item: string]: CalculationDetail
+}
+
+export interface CalculationDetail {
+	usage: number // actual usage in the enclosing timeframe
+	unit?: string
+	rate: number // rate per usage
+	subtotal: number // usage * rate
+	subtotal1h: number // subtotal for 1 hour (normalized)
+}
 
 const mod = defineModule({
 	strict: process.env.NODE_ENV !== 'production',
@@ -63,38 +68,32 @@ const mod = defineModule({
 					}
 				}
 
-				if (payload.usage) {
-					for (const key in payload.usage) {
-						Vue.set(resource.usage, key, payload.usage[key]);
-					}
-				}
+				if (payload.calculations) {
+					Vue.set(resource, 'calculations', payload.calculations);
+					if (!resource.calculations) { throw 'never'; }
 
-				if (payload.costs) {
-					for (const key in payload.usage) {
-						if (key === 'total') {
-							throw 'resource total is updated automatically';
+					for (const time of aggregationTimeframes) {
+						const items = resource.calculations[time];
+
+						let subtotal = 0;
+						let subtotal1h = 0;
+
+						for (const item in items) {
+							if (item === 'total') { continue; }
+
+							subtotal += items[item].subtotal;
+							subtotal1h += items[item].subtotal1h;
 						}
 
-						Vue.set(resource.costs, key, payload.costs[key]);
+						const totalItem: CalculationDetail = {
+							usage: 0,
+							rate: 0,
+							subtotal,
+							subtotal1h,
+						};
+
+						Vue.set(resource.calculations[time], 'total', totalItem);
 					}
-
-					const total: Breakdown = {
-						last: 0,
-						avg1h: 0,
-						avg1d: 0,
-						avg1w: 0,
-					};
-
-					for (const key in resource.costs) {
-						if (key !== 'total') {
-							total.last += resource.costs[key].last;
-							total.avg1h += resource.costs[key].avg1h;
-							total.avg1d += resource.costs[key].avg1d;
-							total.avg1w += resource.costs[key].avg1w;
-						}
-					}
-
-					Vue.set(resource.costs, 'total', total);
 				}
 			}
 		},
@@ -118,7 +117,6 @@ const modActionContext = (context: any) => moduleActionContext(context, mod)
 interface UpdatePayload {
 	id: string
 	error?: any
-	details?: {[key: string]: number|string}
-	usage?: {[key: string]: UsageBreakdown}
-	costs?: {[key: string]: Breakdown}
+	details?: {[key: string]: Detail}
+	calculations?: Calculations
 }

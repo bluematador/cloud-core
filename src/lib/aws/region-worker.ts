@@ -2,6 +2,7 @@ import Account from './account';
 import AWS from 'aws-sdk';
 import Pricing, { RegionPrices } from './pricing';
 import PriorityQueue from '../datastructures/priority-queue';
+import { AggregationTimeframe, Calculation, Calculations, CalculationDetail } from '@/store/resources';
 import { CloudWatchWorker } from './services/cloudwatch';
 import { Maybe } from 'purify-ts/Maybe';
 import { PromiseResult } from 'aws-sdk/lib/request';
@@ -119,6 +120,26 @@ export abstract class RegionWorker {
 
 	protected cancelled(token: CancelToken): boolean {
 		return this.cancel !== token;
+	}
+
+	protected calculationsForResource(fn: (timeframe: AggregationTimeframe, seconds: number) => Calculation): Calculations {
+		return {
+			last:  fn('last',     300),
+			avg1h: fn('avg1h',   3600),
+			avg1d: fn('avg1d',  86400),
+			avg1w: fn('avg1w', 604800),
+		};
+	}
+
+	protected normalizeCalculation(usage: number, rate: number, seconds: number, unit?: string): CalculationDetail {
+		const subtotal = usage * rate;
+		return {
+			usage,
+			unit,
+			rate,
+			subtotal,
+			subtotal1h: subtotal * 3600 / seconds,
+		};
 	}
 
 	start(): void {
