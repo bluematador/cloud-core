@@ -4,15 +4,90 @@ export {};
 
 declare global {
 	interface Array<T> {
+		count(fn: (_1: T) => boolean): number;
+		copy(): T[];
+		distinct(): T[];
+		equalsSet(other: T[]): boolean;
+		flat<T>(this: T[][]): T[];
 		groupBy<U>(fn: (_1: T) => U): Map<U, T[]>;
 		max(): number;
 		maxBy(fn: (_1: T) => number): number;
 		min(): number;
 		minBy(fn: (_1: T) => number): number;
+		none(fn: (_1: T) => boolean): boolean;
+		shuffle(): Array<T>;
 		sortBy<U>(fn: (_1: T) => U): T[];
 		sortNum(): T[];
 		sortNumBy<U extends number>(fn: (_1: T) => U): T[];
 		sum(): number;
+		toSet(): Set<T>;
+	}
+}
+
+/*===============*/
+/* Array.shuffle */
+/*===============*/
+
+export function shuffle<T>(array: T[]): void {
+	let lastUnshuffled: number = array.length;
+	let temp: T;
+	let index: number;
+
+	while (lastUnshuffled > 0) {
+		index = Math.floor(Math.random() * lastUnshuffled);
+		--lastUnshuffled;
+
+		temp = array[lastUnshuffled];
+		array[lastUnshuffled] = array[index];
+		array[index] = temp;
+	}
+}
+
+if (!Array.prototype.shuffle) {
+	Array.prototype.shuffle = function<T>(this: T[]): T[] {
+		const copy = [...this];
+		shuffle(copy);
+		return copy;
+	}
+}
+
+/*=============*/
+/* Array.copy */
+/*=============*/
+
+if (!Array.prototype.copy) {
+	Array.prototype.copy = function<T>(this: T[]): T[] {
+		return [...this];
+	}
+}
+
+/*=============*/
+/* Array.count */
+/*=============*/
+
+if (!Array.prototype.count) {
+	Array.prototype.count = function<T>(this: T[], fn: (_1: T) => boolean): number {
+		return this.filter(fn).length;
+	}
+}
+
+/*=============*/
+/* Array.toSet */
+/*=============*/
+
+if (!Array.prototype.toSet) {
+	Array.prototype.toSet = function<T>(this: T[]): Set<T> {
+		return new Set(this);
+	}
+}
+
+/*================*/
+/* Array.distinct */
+/*================*/
+
+if (!Array.prototype.distinct) {
+	Array.prototype.distinct = function<T>(this: T[]): T[] {
+		return [...this.toSet()];
 	}
 }
 
@@ -35,6 +110,16 @@ if (!Array.prototype.groupBy) {
 
 			return map;
 		}, new Map<U, T[]>());
+	}
+}
+
+/*============*/
+/* Array.flat */
+/*============*/
+
+if (!Array.prototype.flat) {
+	Array.prototype.flat = function<T>(this: T[][]): T[] {
+		return this.reduce((accumulator, value) => accumulator.concat(value), []);
 	}
 }
 
@@ -121,5 +206,25 @@ if (!Array.prototype.maxBy) {
 if (!Array.prototype.minBy) {
 	Array.prototype.minBy = function<T>(this: T[], fn: (_1: T) => number): number {
 		return this.map(e => fn(e)).min();
+	}
+}
+
+/*============*/
+/* Array.none */
+/*============*/
+
+if (!Array.prototype.none) {
+	Array.prototype.none = function<T>(this: T[], fn: (_1: T) => boolean): boolean {
+		return !this.some(fn);
+	}
+}
+
+/*=================*/
+/* Array.equalsSet */
+/*=================*/
+
+if (!Array.prototype.equalsSet) {
+	Array.prototype.equalsSet = function<T>(this: T[], other: T[]): boolean {
+		return this.toSet().equals(other.toSet());
 	}
 }
