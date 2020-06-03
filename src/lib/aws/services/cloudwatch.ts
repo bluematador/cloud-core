@@ -59,6 +59,7 @@ export const pricing = new CloudWatchPricing();
 
 export class CloudWatchWorker extends RegionWorker {
 	private api: AWS.CloudWatch;
+	readonly workDelay = 100;
 
 	constructor(readonly account: Account, readonly region: string) {
 		super(region, pricing);

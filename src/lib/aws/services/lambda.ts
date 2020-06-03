@@ -67,6 +67,7 @@ export const pricing = new LambdaPricing();
 
 export class LambdaWorker extends RegionWorker {
 	private api: AWS.Lambda;
+	readonly workDelay = 500;
 
 	constructor(readonly account: Account, readonly region: string) {
 		super(region, pricing);

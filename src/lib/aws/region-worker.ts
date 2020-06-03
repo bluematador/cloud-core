@@ -6,8 +6,6 @@ import { CloudWatchWorker } from './services/cloudwatch';
 import { Maybe } from 'purify-ts/Maybe';
 import { PromiseResult } from 'aws-sdk/lib/request';
 
-const WorkDelay = 1000;
-
 export abstract class RegionWorker {
 	private queue = new PriorityQueue<QueueItem>();
 	private queueFilled: boolean = false;
@@ -25,6 +23,7 @@ export abstract class RegionWorker {
 
 	abstract get account(): Account;
 	abstract get region(): string;
+	abstract get workDelay(): number;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
 	protected abstract fillQueue(): void;
 	protected abstract reset(): void;
@@ -113,7 +112,7 @@ export abstract class RegionWorker {
 			const interval = window.setTimeout(() => {
 				self.timeout = Maybe.empty();
 				self.processQueue();
-			}, WorkDelay);
+			}, this.workDelay);
 			this.timeout = Maybe.of(interval);
 		}
 	}
