@@ -15,6 +15,7 @@ export abstract class Service<T extends RegionWorker> {
 
 	abstract get service(): string;
 	abstract get account(): Account;
+	abstract get caveats(): string[];
 	protected abstract regionFactory(account: Account, region: string): T;
 
 	updatedCredentials(credentials: AWS.Credentials): void {

@@ -1,5 +1,8 @@
+import Account from './account';
 import AWS from 'aws-sdk';
+import Pricing, { RegionPrices } from './pricing';
 import PriorityQueue from '../datastructures/priority-queue';
+import { CloudWatchWorker } from './services/cloudwatch';
 import { Maybe } from 'purify-ts/Maybe';
 import { PromiseResult } from 'aws-sdk/lib/request';
 
@@ -14,11 +17,21 @@ export abstract class RegionWorker {
 	private timeout: Maybe<number> = Maybe.empty();
 	private cancel: CancelToken = 0;
 
+	protected readonly prices: Promise<RegionPrices>;
+
+	constructor(region: string, pricing: Pricing) {
+		this.prices = pricing.forRegion(region);
+	}
+
+	abstract get account(): Account;
 	abstract get region(): string;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
-
 	protected abstract fillQueue(): void;
 	protected abstract reset(): void;
+
+	protected get cloudwatch(): CloudWatchWorker {
+		return this.account.cloudwatch.regions[this.region];
+	}
 
 	protected enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
 		this.queue.push({priority, fn});
@@ -28,16 +41,21 @@ export abstract class RegionWorker {
 		}
 	}
 
-	protected enqueuePagedRequest<D, E>(priority: number, request: AWS.Request<D, E>, handler: (data: D) => any): void {
-		this.enqueue(priority, (token) => {
-			return request.promise().then(response => {
-				this.handlePagedResponse(priority, response, token, handler);
+	protected enqueuePagedRequest<D, E, R>(priority: number, request: AWS.Request<D, E>, handler: (data: D) => R): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.enqueue(priority, (token) => {
+				return request.promise().then(response => {
+					this.handlePagedResponse(priority, response, token, handler, resolve, reject);
+				}).catch(e => {
+					reject(e);
+				});
 			});
 		});
 	}
 
-	protected handlePagedResponse<D, E>(priority: number, response: PromiseResult<D, E>, token: CancelToken, handler: (data: D) => any): void {
+	private handlePagedResponse<D, E>(priority: number, response: PromiseResult<D, E>, token: CancelToken, handler: (data: D) => any, resolve: () => void, reject: (reason: any) => void): void {
 		if (this.cancelled(token)) {
+			reject('cancelled');
 			return;
 		}
 
@@ -47,10 +65,28 @@ export abstract class RegionWorker {
 		if (nextPage) {
 			this.enqueue(priority, (newToken) => {
 				return nextPage.promise().then(response => {
-					this.handlePagedResponse(priority, response, newToken, handler);
+					this.handlePagedResponse(priority, response, newToken, handler, resolve, reject);
+				}).catch(e => {
+					reject(e);
 				});
 			});
 		}
+		else {
+			resolve();
+		}
+	}
+
+	protected enqueuePagedRequestFold<D, E, R>(priority: number, request: AWS.Request<D, E>, initial: R, handler: (data: D, value: R) => R): Promise<R> {
+		return new Promise<R>((resolve, reject) => {
+			let value: R = initial;
+			this.enqueuePagedRequest(priority, request, (data) => {
+				value = handler(data, value);
+			}).then(() => {
+				resolve(value);
+			}).catch(e => {
+				reject(e);
+			});
+		});
 	}
 
 	private processQueue(): void {
@@ -95,8 +131,8 @@ export abstract class RegionWorker {
 		this.ensureTimeout();
 
 		if (!this.queueFilled) {
-			this.fillQueue();
 			this.queueFilled = true;
+			this.fillQueue();
 		}
 	}
 

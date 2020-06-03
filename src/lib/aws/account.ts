@@ -13,6 +13,7 @@ export class Account {
 	private _credentials: AWS.Credentials;
 
 	readonly services: Service<any>[];
+	readonly cloudwatch: Services.CloudWatch;
 	readonly lambda: Services.Lambda;
 
 	readonly store: AppStore;
@@ -23,8 +24,12 @@ export class Account {
 		this.store = store;
 
 		this.services = [];
+
 		this.lambda = new Services.Lambda(this);
 		this.services.push(this.lambda);
+
+		this.cloudwatch = new Services.CloudWatch(this);
+		this.services.push(this.cloudwatch);
 	}
 
 	updateModel(model: AccountModel): void {

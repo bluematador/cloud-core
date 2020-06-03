@@ -13,21 +13,28 @@ export interface Resource {
 	service: string
 	region: string
 	url: string
-	details: {[key: string]: string}
-	costs?: Costs
-}
+	details: {[key: string]: string|number}
+	error?: any
 
-export interface Costs {
-	last: Breakdown
-	avg1h: Breakdown
-	avg1d: Breakdown
-	avg1w: Breakdown
+	/* actual usage in the specified timeframe */
+	usage: {
+		[key: string]: UsageBreakdown
+	}
+
+	/* $/hr, extrapolated from the timeframe */
+	costs: {
+		[key: string]: Breakdown
+	}
 }
 
 export interface Breakdown {
-	total: number
-	[key: string]: number
+	last: number
+	avg1h: number
+	avg1d: number
+	avg1w: number
 }
+
+export type UsageBreakdown = Breakdown & { unit?: string }
 
 const mod = defineModule({
 	strict: process.env.NODE_ENV !== 'production',
@@ -43,16 +50,52 @@ const mod = defineModule({
 				Vue.set(state.all, state.all.length, resource);
 			}
 		},
-		upsertDetails(state, payload: UpsertDetailsPayload): void {
-			const item = state.all.find(r => r.id === payload.id);
-			if (item) {
-				Vue.set(item, 'details', payload.details);
-			}
-		},
-		upsertCosts(state, payload: UpsertCostsPayload): void {
-			const item = state.all.find(r => r.id === payload.id);
-			if (item) {
-				Vue.set(item, 'costs', payload.costs);
+		updateResource(state, payload: UpdatePayload): void {
+			const resource = state.all.find(r => r.id === payload.id);
+			if (resource !== undefined) {
+				if ('error' in payload) {
+					Vue.set(resource, 'error', payload.error);
+				}
+
+				if (payload.details) {
+					for (const key in payload.details) {
+						Vue.set(resource.details, key, payload.details[key]);
+					}
+				}
+
+				if (payload.usage) {
+					for (const key in payload.usage) {
+						Vue.set(resource.usage, key, payload.usage[key]);
+					}
+				}
+
+				if (payload.costs) {
+					for (const key in payload.usage) {
+						if (key === 'total') {
+							throw 'resource total is updated automatically';
+						}
+
+						Vue.set(resource.costs, key, payload.costs[key]);
+					}
+
+					const total: Breakdown = {
+						last: 0,
+						avg1h: 0,
+						avg1d: 0,
+						avg1w: 0,
+					};
+
+					for (const key in resource.costs) {
+						if (key !== 'total') {
+							total.last += resource.costs[key].last;
+							total.avg1h += resource.costs[key].avg1h;
+							total.avg1d += resource.costs[key].avg1d;
+							total.avg1w += resource.costs[key].avg1w;
+						}
+					}
+
+					Vue.set(resource.costs, 'total', total);
+				}
 			}
 		},
 		deleteAccountResources(state, accountId: string): void {
@@ -72,12 +115,10 @@ export default mod;
 const modGetterContext = (args: [any, any, any, any]) => moduleGetterContext(args, mod)
 const modActionContext = (context: any) => moduleActionContext(context, mod)
 
-interface UpsertDetailsPayload {
+interface UpdatePayload {
 	id: string
-	details: {[key: string]: string}
-}
-
-interface UpsertCostsPayload {
-	id: string
-	costs?: Costs
+	error?: any
+	details?: {[key: string]: number|string}
+	usage?: {[key: string]: UsageBreakdown}
+	costs?: {[key: string]: Breakdown}
 }
