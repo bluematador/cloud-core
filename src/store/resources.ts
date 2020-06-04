@@ -14,6 +14,7 @@ export interface Resource {
 	region: string
 	url: string
 	details: {[key: string]: Detail}
+	tags: {[key: string]: string}
 	error?: any
 	calculations?: Calculations
 }
@@ -68,6 +69,12 @@ const mod = defineModule({
 					}
 				}
 
+				if (payload.tags) {
+					for (const key in payload.tags) {
+						Vue.set(resource.tags, key, payload.tags[key]);
+					}
+				}
+
 				if (payload.calculations) {
 					Vue.set(resource, 'calculations', payload.calculations);
 					if (!resource.calculations) { throw 'never'; }
@@ -118,5 +125,6 @@ interface UpdatePayload {
 	id: string
 	error?: any
 	details?: {[key: string]: Detail}
+	tags?: {[key: string]: string}
 	calculations?: Calculations
 }

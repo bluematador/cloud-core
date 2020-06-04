@@ -103,6 +103,15 @@ export class LambdaWorker extends RegionWorker {
 			}
 		);
 
+		this.enqueuePagedRequest(999, this.api.listTags({Resource: lambda.FunctionArn || ''}), (data) => {
+			if (data.Tags && Object.keys(data.Tags).length > 0) {
+				this.account.store.commit.updateResource({
+					id: lambda.FunctionArn || '',
+					tags: data.Tags,
+				});
+			}
+		});
+
 		// check invocation & duration
 		const usage = this.cloudwatch.summarizeMetrics([{
 				id: 'invocations',
@@ -174,8 +183,7 @@ export class LambdaWorker extends RegionWorker {
 							Role: f.Role || '',
 							Runtime: f.Runtime || '',
 						},
-						usage: {},
-						costs: {},
+						tags: {},
 					};
 				}));
 			}
