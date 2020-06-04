@@ -64,27 +64,27 @@
 					<table class="table table-striped table-hover table-bordered">
 						<thead>
 							<tr>
-								<th class="sortable" @click="changeSort('name')">
+								<th class="sortable" @click="changeSort('name')" width="30%">
 									<i v-if="sort === 'name' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'name' && sortAsc" class="fas fa-caret-up"></i>
 									Name
 								</th>
-								<th class="sortable" @click="changeSort('forecast')">
+								<th class="sortable" @click="changeSort('forecast')" width="10%">
 									<i v-if="sort === 'forecast' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'forecast' && sortAsc" class="fas fa-caret-up"></i>
 									Forecast
 								</th>
-								<th class="sortable" @click="changeSort('service')">
+								<th class="sortable" @click="changeSort('service')" width="20%">
 									<i v-if="sort === 'service' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'service' && sortAsc" class="fas fa-caret-up"></i>
 									Service
 								</th>
-								<th class="sortable" @click="changeSort('region')">
+								<th class="sortable" @click="changeSort('region')" width="15%">
 									<i v-if="sort === 'region' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'region' && sortAsc" class="fas fa-caret-up"></i>
 									Region
 								</th>
-								<th class="sortable" @click="changeSort('account')">
+								<th class="sortable" @click="changeSort('account')" width="25%">
 									<i v-if="sort === 'account' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'account' && sortAsc" class="fas fa-caret-up"></i>
 									Account
