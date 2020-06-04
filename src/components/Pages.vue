@@ -41,7 +41,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component
-export default class Resources extends Vue {
+export default class Pages extends Vue {
 	@Prop({type: Number, required: true}) page!: number;
 	@Prop({type: Number, required: true}) total!: number;
 

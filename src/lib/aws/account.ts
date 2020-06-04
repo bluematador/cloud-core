@@ -3,6 +3,7 @@ import AWS from 'aws-sdk';
 import Service from './service';
 import store, { AppStore } from '../../store';
 import { Account as AccountModel } from '../../store/accounts';
+import { Progress } from '@/store/progress';
 
 AWS.config.update({
 	maxRetries: 5,
@@ -98,6 +99,19 @@ export class Account {
 		this.services.forEach(service => service.stop());
 	}
 
+	updateProgress(): Progress {
+		const progress = {
+			id: this._model.id,
+			done: this.progressDone,
+			total: this.progressTotal,
+			error: this.progressError,
+		};
+
+		this.store.commit.upsertProgress(progress);
+
+		return progress;
+	}
+
 	/**
 	 * cancels pending api calls
 	 */
@@ -107,6 +121,7 @@ export class Account {
 		}
 
 		this.services.forEach(service => service.resetProgress());
+		this.store.commit.deleteProgress(this._model.id);
 	}
 
 	/**
@@ -132,6 +147,18 @@ export class Account {
 
 	get running(): boolean {
 		return this.services.some(s => s.running);
+	}
+
+	get progressDone(): number {
+		return this.services.map(s => s.progressDone).sum();
+	}
+
+	get progressTotal(): number {
+		return this.services.map(s => s.progressTotal).sum();
+	}
+
+	get progressError(): number {
+		return this.services.map(s => s.progressError).sum();
 	}
 }
 

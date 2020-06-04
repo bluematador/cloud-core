@@ -16,6 +16,10 @@ export abstract class RegionWorker {
 	private timeout: Maybe<number> = Maybe.empty();
 	private cancel: CancelToken = 0;
 
+	private _progressDone = 0;
+	private _progressTotal = 0;
+	private _progressErrors = 0;
+
 	protected readonly prices: Promise<RegionPrices>;
 
 	constructor(region: string, pricing: Pricing) {
@@ -34,6 +38,7 @@ export abstract class RegionWorker {
 	}
 
 	protected enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
+		this._progressTotal++;
 		this.queue.push({priority, fn});
 
 		if (this._started) {
@@ -48,6 +53,7 @@ export abstract class RegionWorker {
 					this.handlePagedResponse(priority, response, token, handler, resolve, reject);
 				}).catch(e => {
 					reject(e);
+					throw e;
 				});
 			});
 		});
@@ -68,6 +74,7 @@ export abstract class RegionWorker {
 					this.handlePagedResponse(priority, response, newToken, handler, resolve, reject);
 				}).catch(e => {
 					reject(e);
+					throw e;
 				});
 			});
 		}
@@ -85,6 +92,7 @@ export abstract class RegionWorker {
 				resolve(value);
 			}).catch(e => {
 				reject(e);
+				throw e;
 			});
 		});
 	}
@@ -92,8 +100,17 @@ export abstract class RegionWorker {
 	private processQueue(): void {
 		this.queue.pop().ifJust(one => {
 			this.processing = true;
+			const cancel = this.cancel;
 
-			one.fn(this.cancel).finally(() => {
+			one.fn(cancel).catch(e => {
+				if (!this.cancelled(cancel)) {
+					this._progressErrors++;
+				}
+			}).finally(() => {
+				if (!this.cancelled(cancel)) {
+					this._progressDone++;
+				}
+
 				this.processing = false;
 				this.ensureTimeout();
 			});
@@ -170,6 +187,9 @@ export abstract class RegionWorker {
 			throw 'cannot reset progress while running';
 		}
 
+		this._progressDone = 0;
+		this._progressTotal = 0;
+		this._progressErrors = 0;
 		this.queueFilled = false;
 		this.queue.clear();
 		this.cancel++;
@@ -185,6 +205,18 @@ export abstract class RegionWorker {
 
 	get running(): boolean {
 		return this.started && !this.finished;
+	}
+
+	get progressDone(): number {
+		return this._progressDone;
+	}
+
+	get progressTotal(): number {
+		return this._progressTotal;
+	}
+
+	get progressError(): number {
+		return this._progressErrors;
 	}
 }
 

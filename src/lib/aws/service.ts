@@ -72,6 +72,18 @@ export abstract class Service<T extends RegionWorker> {
 	get running(): boolean {
 		return this.started && !this.finished;
 	}
+
+	get progressDone(): number {
+		return Object.values(this.regions).map(r => r.progressDone).sum();
+	}
+
+	get progressTotal(): number {
+		return Object.values(this.regions).map(r => r.progressTotal).sum();
+	}
+
+	get progressError(): number {
+		return Object.values(this.regions).map(r => r.progressError).sum();
+	}
 }
 
 export abstract class RegionalService<T extends RegionWorker> extends Service<T> {

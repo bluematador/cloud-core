@@ -13,6 +13,14 @@ export class Manager {
 		return Maybe.fromNullable(this.accounts.get(id));
 	}
 
+	keys(): string[] {
+		return [...this.accounts.keys()];
+	}
+
+	values(): Account[] {
+		return [...this.accounts.values()];
+	}
+
 	kill(id: string): void {
 		this.get(id).map(account => {
 			account.stop();

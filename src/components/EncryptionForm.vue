@@ -26,7 +26,7 @@
 import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
 
 @Component
-export default class AccountForm extends Vue {
+export default class EncryptionForm extends Vue {
 	@Ref('form') readonly formRef!: HTMLInputElement;
 	@Ref('key') readonly keyInputRef!: HTMLElement;
 

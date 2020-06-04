@@ -21,7 +21,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component
-export default class Resources extends Vue {
+export default class CollapsingCard extends Vue {
 	@Prop({type: String, required: true}) header!: string;
 	@Prop({type: String}) badge!: string;
 	@Prop({type: Boolean}) collapsed!: boolean;

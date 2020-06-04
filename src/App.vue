@@ -43,6 +43,10 @@
 		<footer class="text-center text-light p-3 bg-dark">
 			&copy; 2020 Blue Matador, Inc.
 		</footer>
+
+		<div class="progress-floater d-none d-md-block">
+			<Progress />
+		</div>
 	</div>
 </template>
 
@@ -50,6 +54,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import Accounts from './components/Accounts.vue';
 import Instructions from './components/Instructions.vue';
+import Progress from './components/Progress.vue';
 import Resources from './components/Resources.vue';
 
 type View = 'accounts' | 'resources' | 'instructions';
@@ -59,6 +64,7 @@ type Dropdown = '' | 'about';
 	components: {
 		Accounts,
 		Instructions,
+		Progress,
 		Resources,
 	},
 })
@@ -108,5 +114,11 @@ nav .nav-item {
 
 button i {
 	margin-right: 8px;
+}
+
+.progress-floater {
+	position: fixed;
+	left: 10px; bottom: 3px;
+	width: 300px;
 }
 </style>
