@@ -34,52 +34,54 @@
 				</div>
 			</div>
 
-			<div class="text-right p-3">{{accounts.length}} Accounts</div>
-			<table v-if="accounts.length > 0" class="table table-striped table-hover">
-				<thead>
-					<tr>
-						<th>Cloud</th>
-						<th>Account ID</th>
-						<th>Name</th>
-						<th>Credentials</th>
-						<th>Enabled</th>
-						<th>Status</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="account in accounts" :key="account.id" :class="{
-								'table-danger': account.error !== undefined,
-								'table-secondary': !account.enabled,
-							}">
-						<td><i class="fab fa-aws"></i></td>
-						<td>{{account.cloudId || ''}}</td>
-						<td>{{account.name}}</td>
-						<td>{{account.access.mask(4)}}</td>
-						<td>
-							<span v-if="account.enabled"><i class="text-success fas fa-check"></i></span>
-							<span v-else><i class="text-danger fas fa-times"></i></span>
-						</td>
-						<td>
-							<span v-if="account.error === undefined"><i class="text-success fas fa-check"></i></span>
-							<span v-else>
-								<i class="text-danger fas fa-times" style="cursor: help; text-decoration: underline;" :title="account.error"></i>
-							</span>
-						</td>
-						<td>
-							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="editAccount(account.id)">
-								<i class="fas fa-edit"></i> Edit
-							</button>
-							<button class="mr-2 btn btn-sm btn-primary" @click.prevent="testAccount(account.id)">
-								<i class="fas fa-heartbeat"></i> Test
-							</button>
-							<button class="btn btn-sm btn-danger" @click.prevent="deleteAccount(account.id)">
-								<i class="fas fa-times"></i> Delete
-							</button>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+			<div v-if="accounts.length > 0">
+				<div class="text-right p-3">{{accounts.length}} Accounts</div>
+				<table class="table table-striped table-hover">
+					<thead>
+						<tr>
+							<th>Cloud</th>
+							<th>Account ID</th>
+							<th>Name</th>
+							<th>Credentials</th>
+							<th>Enabled</th>
+							<th>Status</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="account in accounts" :key="account.id" :class="{
+									'table-danger': account.error !== undefined,
+									'table-secondary': !account.enabled,
+								}">
+							<td><i class="fab fa-aws"></i></td>
+							<td>{{account.cloudId || ''}}</td>
+							<td>{{account.name}}</td>
+							<td>{{account.access.mask(4)}}</td>
+							<td>
+								<span v-if="account.enabled"><i class="text-success fas fa-check"></i></span>
+								<span v-else><i class="text-danger fas fa-times"></i></span>
+							</td>
+							<td>
+								<span v-if="account.error === undefined"><i class="text-success fas fa-check"></i></span>
+								<span v-else>
+									<i class="text-danger fas fa-times" style="cursor: help; text-decoration: underline;" :title="account.error"></i>
+								</span>
+							</td>
+							<td>
+								<button class="mr-2 btn btn-sm btn-primary" @click.prevent="editAccount(account.id)">
+									<i class="fas fa-edit"></i> Edit
+								</button>
+								<button class="mr-2 btn btn-sm btn-primary" @click.prevent="testAccount(account.id)">
+									<i class="fas fa-heartbeat"></i> Test
+								</button>
+								<button class="btn btn-sm btn-danger" @click.prevent="deleteAccount(account.id)">
+									<i class="fas fa-times"></i> Delete
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 	</div>
 </template>
