@@ -18,45 +18,47 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<CollapsingCard header="Cost Calculations">
-						<div class="text-center">
-							<div>Extrapolate costs from the last:</div>
-							<div class="btn-group">
-								<button v-for="(name, key) in costIndexes" :key="key"
-										:disabled="costIndex === key"
-										@click="costIndex = key"
-										class="btn btn-primary">{{name}}</button>
+					<div class="accordion">
+						<CollapsingCard header="Cost Calculations">
+							<div class="text-center">
+								<div>Extrapolate costs from the last:</div>
+								<div class="btn-group">
+									<button v-for="(name, key) in costIndexes" :key="key"
+											:disabled="costIndex === key"
+											@click="costIndex = key"
+											class="btn btn-primary">{{name}}</button>
+								</div>
+								<div class="mt-3 mb-3">
+									<span style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 5px; font-size: 0.75rem;">and then</span>
+								</div>
+								<div>Forecast costs for:</div>
+								<div class="btn-group">
+									<button v-for="(name, seconds) in forecasts" :key="name"
+											:disabled="forecast === Number(seconds)"
+											@click="forecast = Number(seconds)"
+											class="btn btn-primary">{{name}}</button>
+								</div>
 							</div>
-							<div class="mt-3 mb-3">
-								<span style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 5px; font-size: 0.75rem;">and then</span>
-							</div>
-							<div>Forecast costs for:</div>
-							<div class="btn-group">
-								<button v-for="(name, seconds) in forecasts" :key="name"
-										:disabled="forecast === Number(seconds)"
-										@click="forecast = Number(seconds)"
-										class="btn btn-primary">{{name}}</button>
-							</div>
-						</div>
-					</CollapsingCard>
-					<CollapsingCard header="Accounts" collapsed :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
-						<button v-for="account in accounts" :key="account.id"
-								class="filter-option text-truncate mr-1 btn"
-								:class="{'btn-primary': !disabledAccounts[account.id], 'btn-light': disabledAccounts[account.id]}"
-								@click="toggleAccount(account.id)">{{account.name}}</button>
-					</CollapsingCard>
-					<CollapsingCard header="Services" collapsed :badge="'' + (services.length - Object.keys(disabledServices).length)">
-						<button v-for="service in services" :key="service"
-								class="filter-option text-truncate mr-1 btn"
-								:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
-								@click="toggleService(service)">{{service}}</button>
-					</CollapsingCard>
-					<CollapsingCard header="Regions" collapsed :badge="'' + (regions.length - Object.keys(disabledRegions).length)">
-						<button v-for="region in regions" :key="region"
-								class="filter-option text-truncate mr-1 btn"
-								:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
-								@click="toggleRegion(region)">{{region}}</button>
-					</CollapsingCard>
+						</CollapsingCard>
+						<CollapsingCard header="Accounts" collapsed :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
+							<button v-for="account in accounts" :key="account.id"
+									class="filter-option text-truncate mr-1 btn"
+									:class="{'btn-primary': !disabledAccounts[account.id], 'btn-light': disabledAccounts[account.id]}"
+									@click="toggleAccount(account.id)">{{account.name}}</button>
+						</CollapsingCard>
+						<CollapsingCard header="Services" collapsed :badge="'' + (services.length - Object.keys(disabledServices).length)">
+							<button v-for="service in services" :key="service"
+									class="filter-option text-truncate mr-1 btn"
+									:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
+									@click="toggleService(service)">{{service}}</button>
+						</CollapsingCard>
+						<CollapsingCard header="Regions" collapsed :badge="'' + (regions.length - Object.keys(disabledRegions).length)">
+							<button v-for="region in regions" :key="region"
+									class="filter-option text-truncate mr-1 btn"
+									:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
+									@click="toggleRegion(region)">{{region}}</button>
+						</CollapsingCard>
+					</div>
 				</div>
 				<div class="col col-8 col-xl-9">
 					<table class="table table-striped table-hover table-bordered">

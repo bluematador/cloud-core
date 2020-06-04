@@ -1,5 +1,5 @@
 <template>
-	<div class="card mb-1">
+	<div class="card">
 		<div class="card-header" @click="toggle">
 			<span class="mr-3">
 				<i v-if="show" class="fas fa-minus align-middle"></i>
