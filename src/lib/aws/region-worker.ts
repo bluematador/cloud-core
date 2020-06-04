@@ -1,6 +1,6 @@
 import Account from './account';
 import AWS from 'aws-sdk';
-import Pricing, { RegionPrices } from './pricing';
+import Pricing, { RegionPrices, Tier, Levels } from './pricing';
 import PriorityQueue from '../datastructures/priority-queue';
 import { AggregationTimeframe, Calculation, Calculations, CalculationDetail } from '@/store/resources';
 import { CloudWatchWorker } from './services/cloudwatch';
@@ -32,6 +32,12 @@ export abstract class RegionWorker {
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
 	protected abstract fillQueue(): void;
 	protected abstract reset(): void;
+
+	get partition(): string {
+		if (this.region.startsWith('us-gov-')) { return 'aws-us-gov'; }
+		if (this.region.startsWith('cn-')) { return 'aws-cn'; }
+		return 'aws';
+	}
 
 	protected get cloudwatch(): CloudWatchWorker {
 		return this.account.cloudwatch.regions[this.region];
@@ -150,12 +156,50 @@ export abstract class RegionWorker {
 		};
 	}
 
-	protected normalizeCalculation(usage: number, rate: number, seconds: number, unit?: string): CalculationDetail {
+	protected simpleCalc(usage: number, rate: number, seconds: number, unit?: string): CalculationDetail {
 		const subtotal = usage * rate;
 		return {
 			usage,
 			unit,
 			rate,
+			subtotal,
+			subtotal1h: subtotal * 3600 / seconds,
+		};
+	}
+
+	protected tieredCalc(usage: number, tiers: Tier[], seconds: number, unit?: string): CalculationDetail {
+		let subtotal: number = 0;
+		let left: number = usage;
+
+		tiers.forEach(tier => {
+			if (left > 0) {
+				const chunk = tier.count ? Math.min(left, tier.count) : left;
+				left -= chunk;
+				subtotal += chunk * tier.rate;
+			}
+		});
+
+		return {
+			usage,
+			unit,
+			rate: usage ? (subtotal / usage) : tiers[0].rate,
+			subtotal,
+			subtotal1h: subtotal * 3600 / seconds,
+		};
+	}
+
+	protected levelsCalc(items: string[], levels: Levels, seconds: number, unit?: string): CalculationDetail {
+		const usage = items.map(i => Number(i) * seconds / 3600).sum();
+		const subtotal = items.map(i => levels[i] * seconds / 3600).sum();
+
+		if (items.length > 0) {
+			console.log(items, levels, seconds, unit, usage, subtotal, subtotal * 3600 / seconds);
+		}
+
+		return {
+			usage,
+			unit,
+			rate: usage ? (subtotal / usage) : 0,
 			subtotal,
 			subtotal1h: subtotal * 3600 / seconds,
 		};

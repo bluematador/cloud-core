@@ -280,7 +280,9 @@ export interface Tier {
 }
 
 export interface LevelsPrices {
-	[lineItem: string]: {
-		[size: string]: number
-	}
+	[lineItem: string]: Levels
+}
+
+export interface Levels {
+	[size: string]: number
 }

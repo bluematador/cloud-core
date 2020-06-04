@@ -14,6 +14,7 @@ export class Account {
 	private _credentials: AWS.Credentials;
 
 	readonly services: Service<any>[];
+	readonly apigateway: Services.ApiGateway;
 	readonly cloudwatch: Services.CloudWatch;
 	readonly lambda: Services.Lambda;
 
@@ -24,13 +25,15 @@ export class Account {
 		this._credentials = new AWS.Credentials(this._model.access, this._model.secret);
 		this.store = store;
 
-		this.services = [];
-
-		this.lambda = new Services.Lambda(this);
-		this.services.push(this.lambda);
-
+		this.apigateway = new Services.ApiGateway(this);
 		this.cloudwatch = new Services.CloudWatch(this);
-		this.services.push(this.cloudwatch);
+		this.lambda = new Services.Lambda(this);
+
+		this.services = [
+			this.apigateway,
+			this.cloudwatch,
+			this.lambda,
+		];
 
 		this.updateProgress();
 	}

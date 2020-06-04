@@ -151,10 +151,10 @@ export class LambdaWorker extends RegionWorker {
 				const computeUsage = memoryGB * invocationUsage * duration;
 
 				return {
-					Invocations: this.normalizeCalculation(invocationUsage, prices.simple['Requests'], seconds),
-					Compute: this.normalizeCalculation(provisioned === 0 ? computeUsage : 0, prices.simple['Duration'], seconds, 'GB-seconds'),
-					ProvisionedCompute: this.normalizeCalculation(provisioned === 0 ? 0 : computeUsage, prices.simple['Provisioned-Duration'], seconds, 'GB-seconds'),
-					ProvisionedConcurrency: this.normalizeCalculation(provisionedUsage, prices.simple['Provisioned-Concurrency'], seconds),
+					Invocations: this.simpleCalc(invocationUsage, prices.simple['Requests'], seconds),
+					Compute: this.simpleCalc(provisioned === 0 ? computeUsage : 0, prices.simple['Duration'], seconds, 'GB-seconds'),
+					ProvisionedCompute: this.simpleCalc(provisioned === 0 ? 0 : computeUsage, prices.simple['Provisioned-Duration'], seconds, 'GB-seconds'),
+					ProvisionedConcurrency: this.simpleCalc(provisionedUsage, prices.simple['Provisioned-Concurrency'], seconds),
 				};
 			});
 
@@ -175,7 +175,7 @@ export class LambdaWorker extends RegionWorker {
 
 	protected fillQueue(): void {
 		this.enqueuePagedRequest(0, this.api.listFunctions(), data => {
-			if (data.Functions) {
+			if (data.Functions && data.Functions.length > 0) {
 				data.Functions.forEach(f => this.inspectLambda(f));
 
 				this.account.store.commit.addResources(data.Functions.map(f => {
