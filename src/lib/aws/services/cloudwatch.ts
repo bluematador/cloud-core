@@ -19,6 +19,8 @@ export default class CloudWatchService extends RegionalService<CloudWatchWorker>
 			'ap-southeast-1',
 			'ap-southeast-2',
 			'ca-central-1',
+			'cn-north-1',
+			'cn-northwest-1',
 			'eu-central-1',
 			'eu-north-1',
 			'eu-south-1',
@@ -29,6 +31,8 @@ export default class CloudWatchService extends RegionalService<CloudWatchWorker>
 			'sa-east-1',
 			'us-east-1',
 			'us-east-2',
+			'us-gov-east-1',
+			'us-gov-west-1',
 			'us-west-1',
 			'us-west-2',
 		]);
