@@ -67,8 +67,10 @@ export abstract class RegionWorker {
 
 		handler(response);
 
-		const nextPage = response.$response.nextPage();
-		if (nextPage) {
+		if (response.$response.hasNextPage()) {
+			const nextPage = response.$response.nextPage();
+			if (!nextPage) { throw 'AWS is a liar'; }
+
 			this.enqueue(priority, (newToken) => {
 				return nextPage.promise().then(response => {
 					this.handlePagedResponse(priority, response, newToken, handler, resolve, reject);
