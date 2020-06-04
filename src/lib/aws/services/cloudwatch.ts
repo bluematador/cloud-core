@@ -50,8 +50,12 @@ export default class CloudWatchService extends RegionalService<CloudWatchWorker>
 }
 
 export class CloudWatchPricing extends Pricing {
+	protected readonly simpleInfo = {};
+	protected readonly tieredInfo = {};
+	protected readonly levelsInfo = {};
+
 	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/cloudwatch/USD/current/cloudwatch.json', {});
+		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/cloudwatch/USD/current/cloudwatch.json');
 	}
 }
 

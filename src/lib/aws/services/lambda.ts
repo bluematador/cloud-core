@@ -52,15 +52,19 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 }
 
 export class LambdaPricing extends Pricing {
+	protected readonly simpleInfo = {
+		'Lambda Duration': 'Duration',
+		'Lambda Requests': 'Requests',
+		'Lambda Duration-Provisioned': 'Provisioned-Duration',
+		'Lambda Provisioned-Concurrency': 'Provisioned-Concurrency',
+		'Lambda Edge-Duration': 'Edge-Duration',
+		'Lambda Edge-Requests': 'Edge-Requests',
+	};
+	protected readonly tieredInfo = {};
+	protected readonly levelsInfo = {};
+
 	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/lambda/USD/current/lambda.json', {
-			'Lambda Duration': 'Duration',
-			'Lambda Requests': 'Requests',
-			'Lambda Duration-Provisioned': 'Provisioned-Duration',
-			'Lambda Provisioned-Concurrency': 'Provisioned-Concurrency',
-			'Lambda Edge-Duration': 'Edge-Duration',
-			'Lambda Edge-Requests': 'Edge-Requests',
-		});
+		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/lambda/USD/current/lambda.json');
 	}
 }
 
@@ -143,10 +147,10 @@ export class LambdaWorker extends RegionWorker {
 				const computeUsage = memoryGB * invocationUsage * duration;
 
 				return {
-					Invocations: this.normalizeCalculation(invocationUsage, prices['Requests'], seconds),
-					Compute: this.normalizeCalculation(provisioned === 0 ? computeUsage : 0, prices['Duration'], seconds, 'GB-seconds'),
-					ProvisionedCompute: this.normalizeCalculation(provisioned === 0 ? 0 : computeUsage, prices['Provisioned-Duration'], seconds, 'GB-seconds'),
-					ProvisionedConcurrency: this.normalizeCalculation(provisionedUsage, prices['Provisioned-Concurrency'], seconds),
+					Invocations: this.normalizeCalculation(invocationUsage, prices.simple['Requests'], seconds),
+					Compute: this.normalizeCalculation(provisioned === 0 ? computeUsage : 0, prices.simple['Duration'], seconds, 'GB-seconds'),
+					ProvisionedCompute: this.normalizeCalculation(provisioned === 0 ? 0 : computeUsage, prices.simple['Provisioned-Duration'], seconds, 'GB-seconds'),
+					ProvisionedConcurrency: this.normalizeCalculation(provisionedUsage, prices.simple['Provisioned-Concurrency'], seconds),
 				};
 			});
 
