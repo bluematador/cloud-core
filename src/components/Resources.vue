@@ -64,10 +64,15 @@
 					<table class="table table-striped table-hover table-bordered">
 						<thead>
 							<tr>
-								<th class="sortable" @click="changeSort('account')">
-									<i v-if="sort === 'account' && !sortAsc" class="fas fa-caret-down"></i>
-									<i v-if="sort === 'account' && sortAsc" class="fas fa-caret-up"></i>
-									Account
+								<th class="sortable" @click="changeSort('name')">
+									<i v-if="sort === 'name' && !sortAsc" class="fas fa-caret-down"></i>
+									<i v-if="sort === 'name' && sortAsc" class="fas fa-caret-up"></i>
+									Name
+								</th>
+								<th class="sortable" @click="changeSort('forecast')">
+									<i v-if="sort === 'forecast' && !sortAsc" class="fas fa-caret-down"></i>
+									<i v-if="sort === 'forecast' && sortAsc" class="fas fa-caret-up"></i>
+									Forecast
 								</th>
 								<th class="sortable" @click="changeSort('service')">
 									<i v-if="sort === 'service' && !sortAsc" class="fas fa-caret-down"></i>
@@ -79,26 +84,15 @@
 									<i v-if="sort === 'region' && sortAsc" class="fas fa-caret-up"></i>
 									Region
 								</th>
-								<th class="sortable" @click="changeSort('name')">
-									<i v-if="sort === 'name' && !sortAsc" class="fas fa-caret-down"></i>
-									<i v-if="sort === 'name' && sortAsc" class="fas fa-caret-up"></i>
-									Name
-								</th>
-								<th class="sortable" @click="changeSort('forecast')">
-									<i v-if="sort === 'forecast' && !sortAsc" class="fas fa-caret-down"></i>
-									<i v-if="sort === 'forecast' && sortAsc" class="fas fa-caret-up"></i>
-									Forecast
+								<th class="sortable" @click="changeSort('account')">
+									<i v-if="sort === 'account' && !sortAsc" class="fas fa-caret-down"></i>
+									<i v-if="sort === 'account' && sortAsc" class="fas fa-caret-up"></i>
+									Account
 								</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr v-for="resource in pagedResources" :key="resource.id" :class="{'table-danger': resource.error !== undefined}">
-								<td>
-									<i class="fab fa-aws"></i>
-									{{account(resource.accountId).name}}
-								</td>
-								<td>{{resource.service}}</td>
-								<td>{{resource.region}}</td>
 								<td>
 									<a :href="resource.url" target="_blank" class="mr-2"><i class="fas fa-external-link-alt"></i></a>
 									{{resource.name}}
@@ -111,6 +105,12 @@
 										{{costFormat.format(forecast * resource.calculations[costIndex]['total'].subtotal1h)}}
 									</div>
 									<div v-else class="spinner-border spinner-border-sm"></div>
+								</td>
+								<td>{{resource.service}}</td>
+								<td>{{resource.region}}</td>
+								<td>
+									<i class="fab fa-aws"></i>
+									{{account(resource.accountId).name}}
 								</td>
 							</tr>
 						</tbody>
