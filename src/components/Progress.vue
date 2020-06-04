@@ -1,5 +1,5 @@
 <template>
-	<div v-if="total > 0">
+	<div v-if="show">
 		<CollapsingCard header="Discovery Progress" :badge="done ? 'DONE' : undefined">
 			<div class="container-fluid">
 				<div class="row">
@@ -38,16 +38,20 @@ import CollapsingCard from './CollapsingCard.vue';
 	},
 })
 export default class Progress extends Vue {
+	get show(): boolean {
+		return Object.keys(this.$store.direct.state.progress.all).length > 0;
+	}
+
 	get done(): number {
-		return this.$store.getters.overallProgress.done;
+		return this.$store.direct.getters.overallProgress.done;
 	}
 
 	get total(): number {
-		return this.$store.getters.overallProgress.total;
+		return this.$store.direct.getters.overallProgress.total;
 	}
 
 	get errors(): number {
-		return this.$store.getters.overallProgress.error;
+		return this.$store.direct.getters.overallProgress.error;
 	}
 
 	get allDone(): boolean {

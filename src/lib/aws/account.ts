@@ -31,6 +31,8 @@ export class Account {
 
 		this.cloudwatch = new Services.CloudWatch(this);
 		this.services.push(this.cloudwatch);
+
+		this.updateProgress();
 	}
 
 	updateModel(model: AccountModel): void {
