@@ -45,8 +45,8 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 		return [
 			'There is a cost for bandwidth, but AWS does not expose usage.',
 			'Lambda @Edge not implemented yet.',
-			'Cannot see history of provisioned concurrency, so RequestedProvisionedConcurrentExecutions is used for all calculations.',
-			'Amazon rounds function duration up to 100ms increments. We round the average up to simulate. Actual prices may be higher or lower.'
+			'Provisioned Concurrency is either on or off, switches are not detected or included in calculations.',
+			'Amazon rounds function duration up to 100ms increments. We round the average up to simulate. Actual prices may be higher or lower.',
 		];
 	}
 

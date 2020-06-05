@@ -43,6 +43,8 @@ export default class ApiGatewayService extends RegionalService<ApiGatewayWorker>
 
 	get caveats(): string[] {
 		return [
+			'API Gateway v2 does not support CORS, and cannot be detected right now. This includes all websocket and HTTP APIs.',
+			'Caching is either on or off, switches are not detected or included in calculations.',
 		];
 	}
 
