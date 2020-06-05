@@ -29,6 +29,10 @@
 							<i class="fas fa-external-link-alt"></i>
 							Blue Matador
 						</a>
+						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory/issues" target="_blank">
+							<i class="fas fa-external-link-alt"></i>
+							Issue Tracker
+						</a>
 					</div>
 				</li>
 			</ul>
