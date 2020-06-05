@@ -14,8 +14,10 @@ export class Account {
 	private _credentials: AWS.Credentials;
 
 	readonly services: Service<any>[];
+
 	readonly apigateway: Services.ApiGateway;
 	readonly cloudwatch: Services.CloudWatch;
+	readonly dynamodb: Services.DynamoDB;
 	readonly lambda: Services.Lambda;
 
 	readonly store: AppStore;
@@ -27,11 +29,13 @@ export class Account {
 
 		this.apigateway = new Services.ApiGateway(this);
 		this.cloudwatch = new Services.CloudWatch(this);
+		this.dynamodb = new Services.DynamoDB(this);
 		this.lambda = new Services.Lambda(this);
 
 		this.services = [
 			this.apigateway,
 			this.cloudwatch,
+			this.dynamodb,
 			this.lambda,
 		];
 

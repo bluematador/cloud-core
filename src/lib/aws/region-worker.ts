@@ -43,13 +43,28 @@ export abstract class RegionWorker {
 		return this.account.cloudwatch.regions[this.region];
 	}
 
-	protected enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
+	private enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
 		this._progressTotal++;
 		this.queue.push({priority, fn});
 
 		if (this._started) {
 			this.ensureTimeout();
 		}
+	}
+
+	protected enqueueRequest<D, E, R>(priority: number, request: AWS.Request<D, E>, handler: (data: D) => R): Promise<R> {
+		return new Promise((resolve, reject) => {
+			this.enqueue(priority, (token) => {
+				return request.promise().then(response => {
+					if (this.cancelled(token)) {
+						reject('cancelled');
+						return;
+					}
+
+					resolve(handler(response));
+				});
+			})
+		});
 	}
 
 	protected enqueuePagedRequest<D, E, R>(priority: number, request: AWS.Request<D, E>, handler: (data: D) => R): Promise<void> {
