@@ -13,7 +13,7 @@
 			</div>
 			<div class="form-group">
 				<label for="AccountFormAccess">Access ID</label>
-				<input v-model="access" type="text" class="form-control" id="AccountFormAccess" placeholder="Access ID" required minlength="20" maxlength="30" />
+				<input v-model="access" type="password" class="form-control" id="AccountFormAccess" placeholder="Access ID" required minlength="20" maxlength="30" />
 				<small class="form-text text-muted">
 					Create a new <a tabindex="-1" href="https://console.aws.amazon.com/iam/home#/users" target="_blank">IAM user</a> with ReadOnlyAccess, and enter the Access ID here.
 				</small>
@@ -23,7 +23,8 @@
 				<label for="AccountFormSecret">Secret Key</label>
 				<input v-model="secret" type="password" class="form-control" id="AccountFormSecret" placeholder="Secret Key" required minlength="40" maxlength="50" />
 				<small class="form-text text-muted">
-					Enter the Secret Key for your readonly IAM user here.
+					Credentials are never transmitted, except in direct API calls to the provider.<br />
+					Your Access IDs and Secret Keys are only stored if you specify an encryption key.
 				</small>
 				<div class="invalid-feedback">Required from IAM</div>
 			</div>
