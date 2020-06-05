@@ -1,7 +1,7 @@
 import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
-import RegionWorker, { CancelToken } from '../region-worker';
+import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
 const Name: string = 'CloudWatch';
