@@ -2,8 +2,9 @@ import Cookies from 'js-cookie';
 import SimpleCrypto from "simple-crypto-js";
 import { Account } from '../../store/accounts';
 
-const KEY_ACCOUNTS = "accounts";
-const KEY_COUNT = "numAccounts";
+const PREFIX = "CLOUDCORE-";
+const KEY_ACCOUNTS = PREFIX + "accounts";
+const KEY_COUNT = PREFIX + "numAccounts";
 
 export class AccountStorage {
 	private getStored(): undefined | string {

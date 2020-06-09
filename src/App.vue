@@ -1,7 +1,9 @@
 <template>
 	<div id="app">
 		<nav class="navbar navbar-expand navbar-dark bg-dark">
-			<div class="navbar-brand mr-5">AWS Cost Inventory</div>
+			<div class="navbar-brand mr-5">
+				<span title="Cloud Cost Optimization Resource Explorer">Cloud CORE</span>
+			</div>
 			<ul class="navbar-nav">
 				<li class="nav-item">
 					<a href="#" @click.stop.prevent="navigate('accounts')" :class="{'nav-link': true, 'active': view === 'accounts'}">
@@ -21,13 +23,16 @@
 						<a :class="'dropdown-item ' + (view === 'instructions' ? 'active' : '')" href="#" @click.stop.prevent="navigate('instructions')">
 							Instructions
 						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" target="_blank">
-							<i class="fas fa-external-link-alt"></i>
-							Source (Github)
+						<a :class="'dropdown-item ' + (view === 'faq' ? 'active' : '')" href="#" @click.stop.prevent="navigate('faq')">
+							FAQ
 						</a>
 						<a class="dropdown-item" href="https://www.bluematador.com/" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Blue Matador
+						</a>
+						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" target="_blank">
+							<i class="fas fa-external-link-alt"></i>
+							Source (Github)
 						</a>
 						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory/issues" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
@@ -40,6 +45,7 @@
 
 		<div class="main pb-5">
 			<Instructions v-if="view === 'instructions'" />
+			<Faq v-if="view === 'faq'" />
 			<Accounts v-if="view === 'accounts'" />
 			<Resources v-if="view === 'resources'" />
 		</div>
@@ -57,16 +63,18 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import Accounts from './components/Accounts.vue';
+import Faq from './components/Faq.vue';
 import Instructions from './components/Instructions.vue';
 import Progress from './components/Progress.vue';
 import Resources from './components/Resources.vue';
 
-type View = 'accounts' | 'resources' | 'instructions';
+type View = 'accounts' | 'faq' | 'resources' | 'instructions';
 type Dropdown = '' | 'about';
 
 @Component({
 	components: {
 		Accounts,
+		Faq,
 		Instructions,
 		Progress,
 		Resources,

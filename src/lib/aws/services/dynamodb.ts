@@ -4,7 +4,7 @@ import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
-const Name: string = 'DynamoDB';
+export const Name: string = 'DynamoDB';
 const SecondsInMonth = 2592000;
 const Gigabytes = 1073741824;
 

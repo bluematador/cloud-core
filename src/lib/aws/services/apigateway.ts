@@ -4,7 +4,7 @@ import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
-const Name: string = 'API Gateway (v1)';
+export const Name: string = 'API Gateway (v1)';
 
 export default class ApiGatewayService extends RegionalService<ApiGatewayWorker> {
 	constructor(readonly account: Account) {

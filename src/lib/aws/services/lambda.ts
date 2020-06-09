@@ -4,7 +4,7 @@ import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
-const Name: string = 'Lambda';
+export const Name: string = 'Lambda';
 
 export default class LambdaService extends RegionalService<LambdaWorker> {
 	constructor(readonly account: Account) {

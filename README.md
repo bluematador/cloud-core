@@ -1,4 +1,4 @@
-# Realtime AWS Cost Inventory
+# Cloud CORE
 
 Tracking cloud inventory and costs in realtime isn't possible with any major cloud provider. There are a number of reasons for this.
 
@@ -9,6 +9,10 @@ Tracking cloud inventory and costs in realtime isn't possible with any major clo
 The major cloud providers provide tooling to get billing forecasts and historical costs, but they always fall short of providing helpful information on pinpointing waste and reducing your bill. They don't support multiple accounts and definitely don't dive into resource-specific usage.
 
 So, we built this tool.
+
+## Why "Cloud CORE"?
+
+CORE is an acronym. The full name is "Cloud Cost Optimization Resource Explorer".
 
 ## What does it do?
 
@@ -23,15 +27,16 @@ Overall, it's a great way to see what the cloud providers don't want you to see 
 
 ## What does it not do?
 
-This tool is not a replacement for the cost explorer and bill forecasting tools from the cloud providers. As such, it does not:
+This tool is not a replacement for the cost explorer and bill forecasting tools from the cloud providers. As such, **it does not**:
 
 * Track usage between refreshes.
 * Make API calls on any sort of cronjob or frequency.
+* Send notifications.
 * Make any changes in your account or read sensitive or proprietary data.
 
 ## How do I use it?
 
-Great question. Once it's up (v1.0), we'll update this page with a link.
+You can access the current master build [here](https://tools.bluematador.com/cloud-core/).
 
 To run it yourself, look at the [development instructions](DEVELOPING.md).
 

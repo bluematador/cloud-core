@@ -1,75 +1,36 @@
 <template>
-	<div class="container mt-2 mb-2">
-		<h1 class="text-center">Realtime AWS Cost Inventory</h1>
-		<p>Tracking cloud inventory and costs in realtime isn't possible with any major cloud provider. There are a number of reasons for this.</p>
+	<div class="container">
+		<h1 class="text-center pt-2">Cloud CORE</h1>
+		<div class="text-center">
+			<strong>C</strong>ost <strong>O</strong>ptimization <strong>R</strong>esource <strong>E</strong>xplorer
+		</div>
+
+		<h3 class="mt-4">Instructions</h3>
+
+		<p>To get a real-time snapshot of your AWS costs, do the following:</p>
+
+		<ol>
+			<li><strong>Connect your AWS accounts</strong> by entering your access and secret key under "Accounts".</li>
+			<li><strong>Your browser will call the APIs</strong> in the background.</li>
+			<li><strong>Browse your resource usage and costs</strong> under "Resources".</li>
+		</ol>
+
+		<h3 class="mt-4">Supported AWS Services</h3>
 		<ul>
-			<li>Your usage is elastic, including bandwidth, function invocations, IOPS, and more.</li>
-			<li>Your credentials are widely distributed. Anyone can launch more resources at the drop of a hat.</li>
-			<li>Your cloud footprint can easily extend beyond a single account at a single IaaS provider.</li>
-			<li>The major cloud providers provide tooling to get billing forecasts and historical costs, but they always fall short of providing helpful information on pinpointing waste and reducing your bill. They don't support multiple accounts and definitely don't dive into resource-specific usage.</li>
+			<li v-for="service in awsServices" :key="service">{{service}}</li>
 		</ul>
-		<p>
-			This tool queries AWS for all your resources and usage, across all services and all regions,
-			using IAM credentials supplied by you. This allows you to:
-		</p>
-		<ul>
-			<li>Find the most costly resources in your account.</li>
-			<li>Track inventory between regions and services.</li>
-			<li>Project monthly costs based on instantaneous usage.</li>
-			<li>Drill into specific resources and associated costs.</li>
-		</ul>
-		<p>Overall, it's a great way to see what the cloud providers don't want you to see - how to reduce your cloud spend.</p>
-
-		<hr />
-
-		<h1 class="text-center">Instructions</h1>
-		<p>All this tool needs is your cloud credentials and a little bit of time to call APIs.</p>
-		<p>
-			You can enter your credentials on the "Accounts" tab. Once your credentials have been verified,
-			the discovery process will begin automatically.
-		</p>
-		<p>While discovery is running, you can add more accounts, watch the progress, or leave and come back.</p>
-		<p class="alert alert-danger"><strong>Don't close your browser!</strong></p>
-		<p>This tool has no data persistence, so leave your browser open until all discovery and analysis is finished.</p>
-
-		<hr />
-
-		<h1 class="text-center">FAQ</h1>
-		<p>
-			If your question isn't here, check the
-			<a href="https://github.com/bluematador/realtime-aws-cost-inventory" target="_blank">Github project</a>.
-		</p>
-
-		<h3>Does this tool cost money?</h3>
-		<p>
-			This tool is open source and totally free. There are no hosting costs, data costs, or usage costs
-			associated with this tool. There may be costs associated with calling your cloud APIs for resource
-			inventories and cost projections.
-		</p>
-
-		<h3>Where is my data stored?</h3>
-		<p>
-			Your resource data is not stored at all. Your credentials are stored in your browser, but only with an encryption key.
-		</p>
-
-		<h3>What happens if I close the browser?</h3>
-		<p>
-			When the browser closes, all your resource data is lost, and only the encrypted local storage remains.
-			The discovery process must restart when you come back.
-		</p>
-
-		<hr />
-
-		<h1 class="text-center">Liability</h1>
-		<p>Use this tool at your own risk, cost, and liability.</p>
 	</div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { All as Services } from '@/lib/aws/services';
 
 @Component
 export default class Instructions extends Vue {
+	get awsServices(): string[] {
+		return Services.sortBy(a => a);
+	}
 }
 </script>
 

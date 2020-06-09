@@ -4,7 +4,7 @@ import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
-const Name: string = 'Kinesis Data Streams';
+export const Name: string = 'Kinesis Data Streams';
 const PayloadUnitFactor = 25; // magic number they use to calculate 'payload units' from KB of data
 
 export default class KinesisService extends RegionalService<KinesisWorker> {

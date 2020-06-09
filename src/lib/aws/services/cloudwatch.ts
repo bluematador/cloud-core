@@ -4,7 +4,7 @@ import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
 import { RegionalService } from '../service';
 
-const Name: string = 'CloudWatch';
+export const Name: string = 'CloudWatch';
 
 export default class CloudWatchService extends RegionalService<CloudWatchWorker> {
 	constructor(readonly account: Account) {
