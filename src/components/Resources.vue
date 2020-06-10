@@ -101,7 +101,10 @@
 									{{resource.name}}
 								</td>
 								<td v-if="resource.error !== undefined" colspan="1" class="text-center">
-									{{resource.error}}
+									<div class="resource-error">
+										<i class="fas fa-question-circle" :title="resource.error.toString()"></i>
+										{{resource.error}}
+									</div>
 								</td>
 								<td v-if="resource.error === undefined">
 									<div v-if="resource.calculations">
@@ -294,5 +297,12 @@ th.sortable {
 	&:hover {
 		background-color: #aaa;
 	}
+}
+
+.resource-error {
+	max-width: 200px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 </style>
