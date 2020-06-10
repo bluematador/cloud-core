@@ -8,6 +8,7 @@ export interface ResourcesState {
 
 export interface Resource {
 	id: string
+	kind: string
 	accountId: string
 	name: string
 	service: string

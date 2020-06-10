@@ -235,6 +235,7 @@ export class DynamoDBWorker extends RegionWorker {
 				this.account.store.commit.addResources(data.TableNames.map(t => {
 					return {
 						id: this.arnForTable(t),
+						kind: 'Table',
 						accountId: this.account.model.id,
 						name: t,
 						service: Name,

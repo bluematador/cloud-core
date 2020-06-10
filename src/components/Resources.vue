@@ -45,19 +45,25 @@
 					<div class="accordion mb-3">
 						<CollapsingCard header="Accounts" collapsed :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
 							<button v-for="account in accounts" :key="account.id"
-									class="filter-option text-truncate mr-1 btn"
+									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledAccounts[account.id], 'btn-light': disabledAccounts[account.id]}"
 									@click="toggleAccount(account.id)">{{account.name}}</button>
 						</CollapsingCard>
 						<CollapsingCard header="Services" collapsed :badge="'' + (services.length - Object.keys(disabledServices).length)">
 							<button v-for="service in services" :key="service"
-									class="filter-option text-truncate mr-1 btn"
+									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
 									@click="toggleService(service)">{{service}}</button>
 						</CollapsingCard>
+						<CollapsingCard header="Resource Types" collapsed :badge="'' + (kinds.length - Object.keys(disabledKinds).length)">
+							<button v-for="kind in kinds" :key="kind"
+									class="filter-option text-truncate mr-1 mb-1 btn"
+									:class="{'btn-primary': !disabledKinds[kind], 'btn-light': disabledKinds[kind]}"
+									@click="toggleKind(kind)">{{kind}}</button>
+						</CollapsingCard>
 						<CollapsingCard header="Regions" collapsed :badge="'' + (regions.length - Object.keys(disabledRegions).length)">
 							<button v-for="region in regions" :key="region"
-									class="filter-option text-truncate mr-1 btn"
+									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
 									@click="toggleRegion(region)">{{region}}</button>
 						</CollapsingCard>
@@ -82,12 +88,17 @@
 									<i v-if="sort === 'service' && sortAsc" class="fas fa-caret-up"></i>
 									Service
 								</th>
+								<th class="sortable" @click="changeSort('kind')" width="10%">
+									<i v-if="sort === 'kind' && !sortAsc" class="fas fa-caret-down"></i>
+									<i v-if="sort === 'kind' && sortAsc" class="fas fa-caret-up"></i>
+									Type
+								</th>
 								<th class="sortable" @click="changeSort('region')" width="15%">
 									<i v-if="sort === 'region' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'region' && sortAsc" class="fas fa-caret-up"></i>
 									Region
 								</th>
-								<th class="sortable" @click="changeSort('account')" width="25%">
+								<th class="sortable" @click="changeSort('account')" width="15%">
 									<i v-if="sort === 'account' && !sortAsc" class="fas fa-caret-down"></i>
 									<i v-if="sort === 'account' && sortAsc" class="fas fa-caret-up"></i>
 									Account
@@ -113,6 +124,7 @@
 									<div v-else class="spinner-border spinner-border-sm"></div>
 								</td>
 								<td>{{resource.service}}</td>
+								<td>{{resource.kind}}</td>
 								<td>{{resource.region}}</td>
 								<td>
 									<i class="fab fa-aws"></i>
@@ -139,7 +151,7 @@ import { Resource } from '../store/resources';
 import CollapsingCard from './CollapsingCard.vue';
 import Pages from './Pages.vue';
 
-type SortOptions = 'account'|'service'|'region'|'name'|'forecast';
+type SortOptions = 'account'|'service'|'kind'|'region'|'name'|'forecast';
 type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w'
 
 @Component({
@@ -178,12 +190,14 @@ export default class Resources extends Vue {
 
 	disabledAccounts: {[id: string]: string} = {};
 	disabledServices: {[id: string]: string} = {};
+	disabledKinds: {[id: string]: string} = {};
 	disabledRegions: {[id: string]: string} = {};
 
 	get resources() {
 		const filtered = this.$store.direct.state.resources.all.filter(r => {
 			return !(r.accountId in this.disabledAccounts) &&
 			       !(r.service in this.disabledServices) &&
+			       !(r.kind in this.disabledKinds) &&
 			       !(r.region in this.disabledRegions);
 		});
 
@@ -238,6 +252,12 @@ export default class Resources extends Vue {
 		return this.$store.direct.state.resources.all.map(r => r.region).distinct().sort();
 	}
 
+	get kinds() {
+		return this.$store.direct.state.resources.all.filter(r => {
+			return !(r.service in this.disabledServices);
+		}).map(r => r.kind).distinct().sort();
+	}
+
 	account(id: string) {
 		return this.$store.direct.state.accounts.all.find(a => a.id === id);
 	}
@@ -257,6 +277,10 @@ export default class Resources extends Vue {
 
 	toggleService(id: string) {
 		this.toggle(id, this.disabledServices);
+	}
+
+	toggleKind(id: string) {
+		this.toggle(id, this.disabledKinds);
 	}
 
 	toggleRegion(id: string) {

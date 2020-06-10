@@ -171,6 +171,7 @@ export class ApiGatewayWorker extends RegionWorker {
 				this.account.store.commit.addResources(data.items.map(i => {
 					return {
 						id: this.arnForRest(i),
+						kind: 'Rest API',
 						accountId: this.account.model.id,
 						name: i.name || '',
 						service: Name,

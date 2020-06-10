@@ -181,6 +181,7 @@ export class LambdaWorker extends RegionWorker {
 				this.account.store.commit.addResources(data.Functions.map(f => {
 					return {
 						id: f.FunctionArn || '',
+						kind: 'Function',
 						accountId: this.account.model.id,
 						name: f.FunctionName || '',
 						service: Name,

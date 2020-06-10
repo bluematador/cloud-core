@@ -186,6 +186,7 @@ export class KinesisWorker extends RegionWorker {
 				this.account.store.commit.addResources(data.StreamNames.map(s => {
 					return {
 						id: this.arnForStream(s),
+						kind: 'Stream',
 						accountId: this.account.model.id,
 						name: s,
 						service: Name,
