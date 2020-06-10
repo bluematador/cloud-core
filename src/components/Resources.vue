@@ -18,7 +18,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<div class="accordion">
+					<div class="accordion mb-3">
 						<CollapsingCard header="Cost Calculations">
 							<div class="text-center">
 								<div>Extrapolate costs from the last:</div>
@@ -40,6 +40,9 @@
 								</div>
 							</div>
 						</CollapsingCard>
+					</div>
+
+					<div class="accordion mb-3">
 						<CollapsingCard header="Accounts" collapsed :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
 							<button v-for="account in accounts" :key="account.id"
 									class="filter-option text-truncate mr-1 btn"
