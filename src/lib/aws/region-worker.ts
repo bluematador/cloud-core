@@ -1,6 +1,6 @@
 import Account from './account';
 import AWS from 'aws-sdk';
-import Pricing, { RegionPrices, Tier, Levels } from './pricing';
+import { Tier, Levels } from './pricing';
 import PriorityQueue from '../datastructures/priority-queue';
 import { AggregationTimeframe, Calculation, Calculations, CalculationDetail } from '@/store/resources';
 import { CloudWatchWorker } from './services/cloudwatch';
@@ -19,12 +19,6 @@ export abstract class RegionWorker {
 	private _progressDone = 0;
 	private _progressTotal = 0;
 	private _progressErrors = 0;
-
-	protected readonly prices: Promise<RegionPrices>;
-
-	constructor(region: string, pricing: Pricing) {
-		this.prices = pricing.forRegion(region);
-	}
 
 	abstract get account(): Account;
 	abstract get region(): string;

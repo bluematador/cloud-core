@@ -78,7 +78,7 @@ export class KinesisWorker extends RegionWorker {
 	readonly workDelay = 500;
 
 	constructor(readonly account: Account, readonly region: string) {
-		super(region, pricing);
+		super();
 
 		this.api = new AWS.Kinesis({
 			apiVersion: '2013-12-02',
@@ -147,7 +147,9 @@ export class KinesisWorker extends RegionWorker {
 				dimensions: { 'StreamName': stream },
 		}]);
 
-		Promise.all([details, consumers, usage, this.prices]).then(([details, consumers, usage, prices]) => {
+		const regionPricing = pricing.forRegion(this.region);
+
+		Promise.all([details, consumers, usage, regionPricing]).then(([details, consumers, usage, prices]) => {
 			const calculations = this.calculationsForResource((key, seconds) => {
 				// https://aws.amazon.com/kinesis/data-streams/pricing/
 				const shards = details.Shards.length;

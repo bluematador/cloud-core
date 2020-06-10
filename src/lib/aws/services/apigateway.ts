@@ -78,7 +78,7 @@ export class ApiGatewayWorker extends RegionWorker {
 	readonly workDelay = 500;
 
 	constructor(readonly account: Account, readonly region: string) {
-		super(region, pricing);
+		super();
 
 		this.api = new AWS.APIGateway({
 			apiVersion: '2015-07-09',
@@ -140,7 +140,9 @@ export class ApiGatewayWorker extends RegionWorker {
 				dimensions: { 'ApiName': rest.name || '' },
 		}]);
 
-		Promise.all([caches, usage, this.prices]).then(([caches, usage, prices]) => {
+		const regionPricing = pricing.forRegion(this.region);
+
+		Promise.all([caches, usage, regionPricing]).then(([caches, usage, prices]) => {
 			const calculations = this.calculationsForResource((key, seconds) => {
 				// https://aws.amazon.com/api-gateway/pricing/
 				const apiCalls = usage.metrics['calls'][key].sum;

@@ -32,17 +32,24 @@ const regions = {
 const ignore = {
 	'Any': true,
 	'US West (Los Angeles)': true, // https://aws.amazon.com/blogs/aws/aws-now-available-from-a-local-zone-in-los-angeles/
+	'US ISOB East (Ohio)': true, // no idea what this is.
 }
 
 const regionLookup = Object.fromEntries(Object.entries(regions).map(([key, value]) => [value, key]));
 const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-const magnitudes: {[key: string]: string} = {
-	'thousand':                   '000',
-	'million':                 '000000',
-	'billion':              '000000000',
-	'trillion':          '000000000000',
-	'quadrillion':    '000000000000000',
-	'quintillion': '000000000000000000',
+const multiples: {[key: string]: number} = {
+	'thousand':    Math.pow(1000, 1),
+	'million':     Math.pow(1000, 2),
+	'billion':     Math.pow(1000, 3),
+	'trillion':    Math.pow(1000, 4),
+	'quadrillion': Math.pow(1000, 5),
+	'quintillion': Math.pow(1000, 6),
+	'KB': Math.pow(1024, 1),
+	'MB': Math.pow(1024, 2),
+	'GB': Math.pow(1024, 3),
+	'TB': Math.pow(1024, 4),
+	'PB': Math.pow(1024, 5),
+	'EB': Math.pow(1024, 6),
 };
 
 export default abstract class Pricing {
@@ -67,7 +74,10 @@ export default abstract class Pricing {
 					continue;
 				}
 
-				const regionData = response.body['regions'][regionReadable];
+				const regionData = {
+					...(response.body['regions']['Any'] || {}),
+					...response.body['regions'][regionReadable],
+				};
 				data[region] = {
 					simple: this.parseSimple(regionData),
 					tiered: this.parseTiered(regionData),
@@ -155,6 +165,12 @@ export default abstract class Pricing {
 				}, {
 					rate: 0.0000010000,
 				}]
+
+			Known cases:
+			API Calls Number of up to 333 million
+			Delivered Logs for first 10TB
+			Delivered Logs for next next 20 TB
+			Metric for the first 10000
 		**/
 
 		// ASSUMPTION: on tiered, price always decreases for higher tiers
@@ -165,14 +181,19 @@ export default abstract class Pricing {
 				return [
 					outputKey,
 					Object.keys(data).filter(k => k.startsWith(prefix)).map(key => {
-						// get the last numeric token for the number
-						const sigdig = key.split(' ').filter(k => !isNaN(Number(k))).reverse()[0];
-						const magnitude = magnitudes[key.split(' ').reverse()[0].toLowerCase()] || '';
+						// get all the numbers and then the magnitude
+						const matches = key.match(/(\d+(\s+\d+)*)(\s+)?(\w+)?/);
+						if (!matches) { throw 'invalid regex for pricing info ' + key; }
+
+						const num = Number(matches[1].split(/\s+/g).join());
+						const mag = matches[4] || '';
+
+						const full = (mag in multiples) ? num * multiples[mag] : num;
 						const last = key.toLowerCase().includes(' over ');
 
 						return {
 							rate: Number(data[key].price),
-							...(last ? {} : { count: Number(sigdig + magnitude) }),
+							...(last ? {} : { count: full }),
 						}
 					}).sortNumBy(e => e.count),
 				];

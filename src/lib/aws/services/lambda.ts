@@ -79,7 +79,7 @@ export class LambdaWorker extends RegionWorker {
 	readonly workDelay = 500;
 
 	constructor(readonly account: Account, readonly region: string) {
-		super(region, pricing);
+		super();
 
 		this.api = new AWS.Lambda({
 			apiVersion: '2015-03-31',
@@ -137,7 +137,9 @@ export class LambdaWorker extends RegionWorker {
 				dimensions: { 'FunctionName': lambda.FunctionName || '' },
 		}]);
 
-		Promise.all([provisioned, usage, this.prices]).then(([provisioned, usage, prices]) => {
+		const regionPricing = pricing.forRegion(this.region);
+
+		Promise.all([provisioned, usage, regionPricing]).then(([provisioned, usage, prices]) => {
 			const memoryGB = (lambda.MemorySize || 0) / 1024;
 
 			const calculations = this.calculationsForResource((key, seconds) => {

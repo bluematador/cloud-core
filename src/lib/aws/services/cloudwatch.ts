@@ -70,7 +70,7 @@ export class CloudWatchWorker extends RegionWorker {
 	readonly workDelay = 100;
 
 	constructor(readonly account: Account, readonly region: string) {
-		super(region, pricing);
+		super();
 
 		this.api = new AWS.CloudWatch({
 			apiVersion: '2010-08-01',

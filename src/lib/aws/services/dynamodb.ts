@@ -91,7 +91,7 @@ export class DynamoDBWorker extends RegionWorker {
 	readonly workDelay = 500;
 
 	constructor(readonly account: Account, readonly region: string) {
-		super(region, pricing);
+		super();
 
 		this.api = new AWS.DynamoDB({
 			apiVersion: '2012-08-10',
@@ -182,7 +182,9 @@ export class DynamoDBWorker extends RegionWorker {
 				dimensions: { 'TableName': name },
 		}]);
 
-		Promise.all([details, usage, backupSize, pitrBackups, this.prices]).then(([details, usage, backupSize, pitrBackups, prices]) => {
+		const regionPricing = pricing.forRegion(this.region);
+
+		Promise.all([details, usage, backupSize, pitrBackups, regionPricing]).then(([details, usage, backupSize, pitrBackups, prices]) => {
 			const tableSize = details.TableSizeBytes || 0;
 			const sizePlusOverhead = tableSize + 100*(details.ItemCount || 0); // 100 is for "overhead"
 
