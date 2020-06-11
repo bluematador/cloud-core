@@ -148,33 +148,33 @@ export class DynamoDBWorker extends RegionWorker {
 		});
 
 		const usage = this.cloudwatch.summarizeMetrics([{
-				id: 'read',
-				metric: 'ConsumedReadCapacityUnits',
-				namespace: 'AWS/DynamoDB',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'TableName': name },
-			}, {
-				id: 'write',
-				metric: 'ConsumedWriteCapacityUnits',
-				namespace: 'AWS/DynamoDB',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'TableName': name },
-			}, {
-				id: 'provread',
-				metric: 'ProvisionedReadCapacityUnits',
-				namespace: 'AWS/DynamoDB',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'TableName': name },
-			}, {
-				id: 'provwrite',
-				metric: 'ProvisionedWriteCapacityUnits',
-				namespace: 'AWS/DynamoDB',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'TableName': name },
+			id: 'read',
+			metric: 'ConsumedReadCapacityUnits',
+			namespace: 'AWS/DynamoDB',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'TableName': name },
+		}, {
+			id: 'write',
+			metric: 'ConsumedWriteCapacityUnits',
+			namespace: 'AWS/DynamoDB',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'TableName': name },
+		}, {
+			id: 'provread',
+			metric: 'ProvisionedReadCapacityUnits',
+			namespace: 'AWS/DynamoDB',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'TableName': name },
+		}, {
+			id: 'provwrite',
+			metric: 'ProvisionedWriteCapacityUnits',
+			namespace: 'AWS/DynamoDB',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'TableName': name },
 		}]);
 
 		Promise.all([details, usage, backupSize, pitrBackups, this.pricing]).then(([details, usage, backupSize, pitrBackups, prices]) => {

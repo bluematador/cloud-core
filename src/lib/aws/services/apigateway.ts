@@ -133,12 +133,12 @@ export class ApiGatewayWorker extends RegionWorker {
 
 		// check invocation & duration
 		const usage = this.cloudwatch.summarizeMetrics([{
-				id: 'calls',
-				metric: 'Count',
-				namespace: 'AWS/ApiGateway',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'ApiName': rest.name || '' },
+			id: 'calls',
+			metric: 'Count',
+			namespace: 'AWS/ApiGateway',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'ApiName': rest.name || '' },
 		}]);
 
 		Promise.all([caches, usage, this.pricing]).then(([caches, usage, prices]) => {

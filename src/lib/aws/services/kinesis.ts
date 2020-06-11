@@ -137,12 +137,12 @@ export class KinesisWorker extends RegionWorker {
 		});
 
 		const usage = this.cloudwatch.summarizeMetrics([{
-				id: 'kb',
-				metric: 'PutRecord.Bytes',
-				namespace: 'AWS/Kinesis',
-				stat: 'Sum',
-				unit: 'Kilobytes', // affects 'payload unit factor'
-				dimensions: { 'StreamName': stream },
+			id: 'kb',
+			metric: 'PutRecord.Bytes',
+			namespace: 'AWS/Kinesis',
+			stat: 'Sum',
+			unit: 'Kilobytes', // affects 'payload unit factor'
+			dimensions: { 'StreamName': stream },
 		}]);
 
 		Promise.all([details, consumers, usage, this.pricing]).then(([details, consumers, usage, prices]) => {

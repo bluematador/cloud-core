@@ -126,19 +126,19 @@ export class LambdaWorker extends RegionWorker {
 
 		// check invocation & duration
 		const usage = this.cloudwatch.summarizeMetrics([{
-				id: 'invocations',
-				metric: 'Invocations',
-				namespace: 'AWS/Lambda',
-				stat: 'Sum',
-				unit: 'Count',
-				dimensions: { 'FunctionName': lambda.FunctionName || '' },
-			}, {
-				id: 'duration',
-				metric: 'Duration',
-				namespace: 'AWS/Lambda',
-				stat: 'Average',
-				unit: 'Milliseconds',
-				dimensions: { 'FunctionName': lambda.FunctionName || '' },
+			id: 'invocations',
+			metric: 'Invocations',
+			namespace: 'AWS/Lambda',
+			stat: 'Sum',
+			unit: 'Count',
+			dimensions: { 'FunctionName': lambda.FunctionName || '' },
+		}, {
+			id: 'duration',
+			metric: 'Duration',
+			namespace: 'AWS/Lambda',
+			stat: 'Average',
+			unit: 'Milliseconds',
+			dimensions: { 'FunctionName': lambda.FunctionName || '' },
 		}]);
 
 		Promise.all([provisioned, usage, this.pricing]).then(([provisioned, usage, prices]) => {
