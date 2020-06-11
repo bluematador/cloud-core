@@ -61,8 +61,27 @@ export default class Pricing {
 
 	private loadAll(opts: PricingOpts): Promise<PricingData> {
 		const promises = opts.map(o => this.loadOne(o));
-		return Promise.all(promises).then(allPricings => {
-			return allPricings[0];
+
+		return Promise.all(promises).then(all => {
+			const ret: PricingData = {};
+
+			for (const one of all) {
+				for (const region in one) {
+					if (!(region in ret)) {
+						ret[region] = {
+							simple: {},
+							levels: {},
+							tiered: {},
+						};
+					}
+
+					ret[region].simple = { ...ret[region].simple, ...one[region].simple };
+					ret[region].tiered = { ...ret[region].tiered, ...one[region].tiered };
+					ret[region].levels = { ...ret[region].levels, ...one[region].levels };
+				}
+			}
+
+			return ret;
 		});
 	}
 
