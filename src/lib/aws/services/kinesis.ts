@@ -191,8 +191,4 @@ export class KinesisWorker extends RegionWorker {
 			}
 		});
 	}
-
-	protected reset(): void {
-		// nothing to do
-	}
 }

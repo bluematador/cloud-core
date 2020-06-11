@@ -240,8 +240,4 @@ export class DynamoDBWorker extends RegionWorker {
 			}
 		});
 	}
-
-	protected reset(): void {
-		// nothing to do
-	}
 }

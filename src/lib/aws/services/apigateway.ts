@@ -180,8 +180,4 @@ export class ApiGatewayWorker extends RegionWorker {
 			}
 		});
 	}
-
-	protected reset(): void {
-		// nothing to do
-	}
 }

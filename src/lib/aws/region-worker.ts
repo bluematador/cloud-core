@@ -27,7 +27,6 @@ export abstract class RegionWorker {
 	abstract get workDelay(): number;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
 	protected abstract fillQueue(): void;
-	protected abstract reset(): void;
 
 	get partition(): string {
 		if (this.region.startsWith('us-gov-')) { return 'aws-us-gov'; }
