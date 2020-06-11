@@ -2,76 +2,67 @@ import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
-import { RegionalService } from '../service';
+import Service from '../service';
+import ServiceInfo from '../service-info';
 
-export const Name: string = 'Kinesis Data Streams';
 const PayloadUnitFactor = 25; // magic number they use to calculate 'payload units' from KB of data
 
-export default class KinesisService extends RegionalService<KinesisWorker> {
+export const Info: ServiceInfo = {
+	name: 'Kinesis Data Streams',
+	regions: [
+		'af-south-1',
+		'ap-east-1',
+		'ap-northeast-1',
+		'ap-northeast-2',
+		'ap-northeast-3',
+		'ap-south-1',
+		'ap-southeast-1',
+		'ap-southeast-2',
+		'ca-central-1',
+		'cn-north-1',
+		'cn-northwest-1',
+		'eu-central-1',
+		'eu-north-1',
+		'eu-south-1',
+		'eu-west-1',
+		'eu-west-2',
+		'eu-west-3',
+		'me-south-1',
+		'sa-east-1',
+		'us-east-1',
+		'us-east-2',
+		'us-gov-east-1',
+		'us-gov-west-1',
+		'us-west-1',
+		'us-west-2',
+	],
+	caveats: [
+		'Unable to find fanout GB data retrieved. Report a bug if you find it.',
+	],
+	pricing: new Pricing([{
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/kinesis/USD/current/kinesis.json',
+		simple: {
+			'Provisioned shard hour per ShardHour': 'shard',
+			'Payload Units per PutRequest': 'payload',
+			'Addon shard hour per ShardHour': 'shard.extra-retention',
+
+			'Enhanced fan out GB of data retrieved per GB': 'fanout.data',
+			'Enhanced fan out per ConsumerShardHour': 'fanout.consumer',
+		},
+		tiered: {},
+		levels: {},
+	}]),
+};
+
+export default class KinesisService extends Service<KinesisWorker> {
 	constructor(readonly account: Account) {
-		// https://docs.aws.amazon.com/general/latest/gr/ak.html
-		super(account, [
-			'af-south-1',
-			'ap-east-1',
-			'ap-northeast-1',
-			'ap-northeast-2',
-			'ap-northeast-3',
-			'ap-south-1',
-			'ap-southeast-1',
-			'ap-southeast-2',
-			'ca-central-1',
-			'cn-north-1',
-			'cn-northwest-1',
-			'eu-central-1',
-			'eu-north-1',
-			'eu-south-1',
-			'eu-west-1',
-			'eu-west-2',
-			'eu-west-3',
-			'me-south-1',
-			'sa-east-1',
-			'us-east-1',
-			'us-east-2',
-			'us-gov-east-1',
-			'us-gov-west-1',
-			'us-west-1',
-			'us-west-2',
-		]);
-	}
-
-	get name(): string {
-		return Name;
-	}
-
-	get caveats(): string[] {
-		return [
-			'Unable to find fanout GB data retrieved. Report a bug if you find it.',
-		];
+		super(account, Info);
 	}
 
 	protected regionFactory(account: Account, region: string): KinesisWorker {
 		return new KinesisWorker(account, this, region);
 	}
 }
-
-export class KinesisPricing extends Pricing {
-	protected readonly simpleInfo = {
-		'Provisioned shard hour per ShardHour': 'shard',
-		'Payload Units per PutRequest': 'payload',
-		'Addon shard hour per ShardHour': 'shard.extra-retention',
-
-		'Enhanced fan out GB of data retrieved per GB': 'fanout.data',
-		'Enhanced fan out per ConsumerShardHour': 'fanout.consumer',
-	};
-	protected readonly tieredInfo = {};
-	protected readonly levelsInfo = {};
-
-	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/kinesis/USD/current/kinesis.json');
-	}
-}
-
-export const pricing = new KinesisPricing();
 
 export class KinesisWorker extends RegionWorker {
 	private api: AWS.Kinesis;
@@ -154,9 +145,7 @@ export class KinesisWorker extends RegionWorker {
 				dimensions: { 'StreamName': stream },
 		}]);
 
-		const regionPricing = pricing.forRegion(this.region);
-
-		Promise.all([details, consumers, usage, regionPricing]).then(([details, consumers, usage, prices]) => {
+		Promise.all([details, consumers, usage, this.pricing]).then(([details, consumers, usage, prices]) => {
 			const calculations = this.calculationsForResource((key, seconds) => {
 				// https://aws.amazon.com/kinesis/data-streams/pricing/
 				const shards = details.Shards.length;

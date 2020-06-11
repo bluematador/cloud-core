@@ -24,12 +24,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { All as Services } from '@/lib/aws/services';
+import { Info as ServiceInfo } from '@/lib/aws/services';
 
 @Component
 export default class Instructions extends Vue {
 	get awsServices(): string[] {
-		return Services.sortBy(a => a);
+		return ServiceInfo.map(i => i.name).sort();
 	}
 }
 </script>

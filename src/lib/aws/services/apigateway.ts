@@ -2,76 +2,66 @@ import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
-import { RegionalService } from '../service';
+import Service from '../service';
+import ServiceInfo from '../service-info';
 
-export const Name: string = 'API Gateway (v1)';
+export const Info: ServiceInfo = {
+	name: 'API Gateway (v1)',
+	regions: [
+		'af-south-1',
+		'ap-east-1',
+		'ap-northeast-1',
+		'ap-northeast-2',
+		'ap-south-1',
+		'ap-southeast-1',
+		'ap-southeast-2',
+		'ca-central-1',
+		'cn-north-1',
+		'cn-northwest-1',
+		'eu-central-1',
+		'eu-north-1',
+		'eu-south-1',
+		'eu-west-1',
+		'eu-west-2',
+		'eu-west-3',
+		'me-south-1',
+		'sa-east-1',
+		'us-east-1',
+		'us-east-2',
+		'us-gov-east-1',
+		'us-gov-west-1',
+		'us-west-1',
+		'us-west-2',
+	],
+	caveats: [
+		'API Gateway v2 does not support CORS, and cannot be detected right now. This includes all websocket and HTTP APIs.',
+		'Caching is either on or off, switches are not detected or included in calculations.',
+	],
+	pricing: new Pricing([{
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/apigateway/USD/current/apigateway.json',
+		simple: {
+			'WebSocket Connection Minutes': 'Socket-Minutes',
+		},
+		tiered: {
+			'API Calls': 'REST-Calls',
+			'ApiGatewayHttpApi': 'HTTP-Calls',
+			'WebSocket Messages': 'Socket-Messages',
+		},
+		levels: {
+			'Caching Memory Size': 'Cache',
+		},
+	}]),
+};
 
-export default class ApiGatewayService extends RegionalService<ApiGatewayWorker> {
+export default class ApiGatewayService extends Service<ApiGatewayWorker> {
 	constructor(readonly account: Account) {
-		// https://docs.aws.amazon.com/general/latest/gr/apigateway.html
-		super(account, [
-			'af-south-1',
-			'ap-east-1',
-			'ap-northeast-1',
-			'ap-northeast-2',
-			'ap-south-1',
-			'ap-southeast-1',
-			'ap-southeast-2',
-			'ca-central-1',
-			'cn-north-1',
-			'cn-northwest-1',
-			'eu-central-1',
-			'eu-north-1',
-			'eu-south-1',
-			'eu-west-1',
-			'eu-west-2',
-			'eu-west-3',
-			'me-south-1',
-			'sa-east-1',
-			'us-east-1',
-			'us-east-2',
-			'us-gov-east-1',
-			'us-gov-west-1',
-			'us-west-1',
-			'us-west-2',
-		]);
-	}
-
-	get name(): string {
-		return Name;
-	}
-
-	get caveats(): string[] {
-		return [
-			'API Gateway v2 does not support CORS, and cannot be detected right now. This includes all websocket and HTTP APIs.',
-			'Caching is either on or off, switches are not detected or included in calculations.',
-		];
+		super(account, Info);
 	}
 
 	protected regionFactory(account: Account, region: string): ApiGatewayWorker {
 		return new ApiGatewayWorker(account, this, region);
 	}
 }
-
-export class ApiGatewayPricing extends Pricing {
-	protected readonly simpleInfo = {
-		'WebSocket Connection Minutes': 'Socket-Minutes',
-	};
-	protected readonly tieredInfo = {
-		'API Calls': 'REST-Calls',
-		'ApiGatewayHttpApi': 'HTTP-Calls',
-		'WebSocket Messages': 'Socket-Messages',
-	};
-	protected readonly levelsInfo = {
-		'Caching Memory Size': 'Cache',
-	};
-
-	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/apigateway/USD/current/apigateway.json');
-	}
-}
-
-export const pricing = new ApiGatewayPricing();
 
 export class ApiGatewayWorker extends RegionWorker {
 	private api: AWS.APIGateway;
@@ -151,9 +141,7 @@ export class ApiGatewayWorker extends RegionWorker {
 				dimensions: { 'ApiName': rest.name || '' },
 		}]);
 
-		const regionPricing = pricing.forRegion(this.region);
-
-		Promise.all([caches, usage, regionPricing]).then(([caches, usage, prices]) => {
+		Promise.all([caches, usage, this.pricing]).then(([caches, usage, prices]) => {
 			const calculations = this.calculationsForResource((key, seconds) => {
 				// https://aws.amazon.com/api-gateway/pricing/
 				const apiCalls = usage.metrics['calls'][key].sum;

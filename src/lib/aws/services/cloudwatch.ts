@@ -2,68 +2,58 @@ import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
-import { RegionalService } from '../service';
+import Service from '../service';
+import ServiceInfo from '../service-info';
 
-export const Name: string = 'CloudWatch';
+export const Info: ServiceInfo = {
+	name: 'CloudWatch',
+	regions: [
+		'af-south-1',
+		'ap-east-1',
+		'ap-northeast-1',
+		'ap-northeast-2',
+		'ap-northeast-3',
+		'ap-south-1',
+		'ap-southeast-1',
+		'ap-southeast-2',
+		'ca-central-1',
+		'cn-north-1',
+		'cn-northwest-1',
+		'eu-central-1',
+		'eu-north-1',
+		'eu-south-1',
+		'eu-west-1',
+		'eu-west-2',
+		'eu-west-3',
+		'me-south-1',
+		'sa-east-1',
+		'us-east-1',
+		'us-east-2',
+		'us-gov-east-1',
+		'us-gov-west-1',
+		'us-west-1',
+		'us-west-2',
+	],
+	caveats: [
+		'Cloudwatch is not actually implemented yet. It only exists to help other services get usage.',
+	],
+	pricing: new Pricing([{
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/cloudwatch/USD/current/cloudwatch.json',
+		simple: {},
+		tiered: {},
+		levels: {},
+	}]),
+};
 
-export default class CloudWatchService extends RegionalService<CloudWatchWorker> {
+export default class CloudWatchService extends Service<CloudWatchWorker> {
 	constructor(readonly account: Account) {
-		// https://docs.aws.amazon.com/general/latest/gr/cw_region.html
-		super(account, [
-			'af-south-1',
-			'ap-east-1',
-			'ap-northeast-1',
-			'ap-northeast-2',
-			'ap-northeast-3',
-			'ap-south-1',
-			'ap-southeast-1',
-			'ap-southeast-2',
-			'ca-central-1',
-			'cn-north-1',
-			'cn-northwest-1',
-			'eu-central-1',
-			'eu-north-1',
-			'eu-south-1',
-			'eu-west-1',
-			'eu-west-2',
-			'eu-west-3',
-			'me-south-1',
-			'sa-east-1',
-			'us-east-1',
-			'us-east-2',
-			'us-gov-east-1',
-			'us-gov-west-1',
-			'us-west-1',
-			'us-west-2',
-		]);
-	}
-
-	get name(): string {
-		return Name;
-	}
-
-	get caveats(): string[] {
-		return [
-			'Cloudwatch is not actually implemented yet. It only exists to help other services get usage.',
-		];
+		super(account, Info);
 	}
 
 	protected regionFactory(account: Account, region: string): CloudWatchWorker {
 		return new CloudWatchWorker(account, this, region);
 	}
 }
-
-export class CloudWatchPricing extends Pricing {
-	protected readonly simpleInfo = {};
-	protected readonly tieredInfo = {};
-	protected readonly levelsInfo = {};
-
-	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/cloudwatch/USD/current/cloudwatch.json');
-	}
-}
-
-export const pricing = new CloudWatchPricing();
 
 export class CloudWatchWorker extends RegionWorker {
 	private api: AWS.CloudWatch;

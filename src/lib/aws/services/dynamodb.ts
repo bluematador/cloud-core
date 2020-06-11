@@ -2,89 +2,77 @@ import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
-import { RegionalService } from '../service';
+import Service from '../service';
+import ServiceInfo from '../service-info';
 
-export const Name: string = 'DynamoDB';
-const SecondsInMonth = 2592000;
-const Gigabytes = 1073741824;
+export const Info: ServiceInfo = {
+	name: 'DynamoDB',
+	regions: [
+		'af-south-1',
+		'ap-east-1',
+		'ap-northeast-1',
+		'ap-northeast-2',
+		'ap-northeast-3',
+		'ap-south-1',
+		'ap-southeast-1',
+		'ap-southeast-2',
+		'ca-central-1',
+		'cn-north-1',
+		'cn-northwest-1',
+		'eu-central-1',
+		'eu-north-1',
+		'eu-south-1',
+		'eu-west-1',
+		'eu-west-2',
+		'eu-west-3',
+		'me-south-1',
+		'sa-east-1',
+		'us-east-1',
+		'us-east-2',
+		'us-gov-east-1',
+		'us-gov-west-1',
+		'us-west-1',
+		'us-west-2',
+	],
+	caveats: [
+		'Backup restores are not included in calculations.',
+		'Global tables using version 2017.11.29 will show up as separate tables, but each table will be correctly accounted for.',
+		'Table size does not have history. Current value is used for PITR backups and data storage.',
+		'Amazon does not give access to number of Stream Read Requests.',
+	],
+	pricing: new Pricing([{
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/dynamodb/USD/current/dynamodb.json',
+		simple: {
+			'Data Storage Indexed GB-Mo': 'storage',
 
-export default class DynamoDBService extends RegionalService<DynamoDBWorker> {
+			'Streams Read Requests': 'stream.read',
+
+			'PayPerRequest Read Request Units': 'ondemand.read',
+			'PayPerRequest Write Request Units': 'ondemand.write',
+			'PayPerRequest Replicated Write Request Units': 'ondemand.write.replicated',
+
+			'Provisioned Read Units': 'provisioned.read',
+			'Provisioned Write Units': 'provisioned.write',
+			'Provisioned Replicated Write Units': 'provisioned.write.replicated',
+
+			'Restore Data Size': 'restore',
+			'On-Demand Backup Storage GB-Month': 'ondemand.backup',
+			'PITR Backup Storage GB-Mo': 'pitr.backup',
+		},
+		tiered: {},
+		levels: {},
+	}]),
+};
+
+export default class DynamoDBService extends Service<DynamoDBWorker> {
 	constructor(readonly account: Account) {
-		// https://docs.aws.amazon.com/general/latest/gr/ddb.html
-		super(account, [
-			'af-south-1',
-			'ap-east-1',
-			'ap-northeast-1',
-			'ap-northeast-2',
-			'ap-northeast-3',
-			'ap-south-1',
-			'ap-southeast-1',
-			'ap-southeast-2',
-			'ca-central-1',
-			'cn-north-1',
-			'cn-northwest-1',
-			'eu-central-1',
-			'eu-north-1',
-			'eu-south-1',
-			'eu-west-1',
-			'eu-west-2',
-			'eu-west-3',
-			'me-south-1',
-			'sa-east-1',
-			'us-east-1',
-			'us-east-2',
-			'us-gov-east-1',
-			'us-gov-west-1',
-			'us-west-1',
-			'us-west-2',
-		]);
-	}
-
-	get name(): string {
-		return Name;
-	}
-
-	get caveats(): string[] {
-		return [
-			'Backup restores are not included in calculations.',
-			'Global tables using version 2017.11.29 will show up as separate tables, but each table will be correctly accounted for.',
-			'Table size does not have history. Current value is used for PITR backups and data storage.',
-			'Amazon does not give access to number of Stream Read Requests.',
-		];
+		super(account, Info);
 	}
 
 	protected regionFactory(account: Account, region: string): DynamoDBWorker {
 		return new DynamoDBWorker(account, this, region);
 	}
 }
-
-export class DynamoDBPricing extends Pricing {
-	protected readonly simpleInfo = {
-		'Data Storage Indexed GB-Mo': 'storage',
-
-		'Streams Read Requests': 'stream.read',
-
-		'PayPerRequest Read Request Units': 'ondemand.read',
-		'PayPerRequest Write Request Units': 'ondemand.write',
-		'PayPerRequest Replicated Write Request Units': 'ondemand.write.replicated',
-
-		'Provisioned Read Units': 'provisioned.read',
-		'Provisioned Write Units': 'provisioned.write',
-		'Provisioned Replicated Write Units': 'provisioned.write.replicated',
-
-		'Restore Data Size': 'restore',
-		'On-Demand Backup Storage GB-Month': 'ondemand.backup',
-		'PITR Backup Storage GB-Mo': 'pitr.backup',
-	};
-	protected readonly tieredInfo = {};
-	protected readonly levelsInfo = {};
-
-	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/dynamodb/USD/current/dynamodb.json');
-	}
-}
-
-export const pricing = new DynamoDBPricing();
 
 export class DynamoDBWorker extends RegionWorker {
 	private api: AWS.DynamoDB;
@@ -189,17 +177,16 @@ export class DynamoDBWorker extends RegionWorker {
 				dimensions: { 'TableName': name },
 		}]);
 
-		const regionPricing = pricing.forRegion(this.region);
 
-		Promise.all([details, usage, backupSize, pitrBackups, regionPricing]).then(([details, usage, backupSize, pitrBackups, prices]) => {
+		Promise.all([details, usage, backupSize, pitrBackups, this.pricing]).then(([details, usage, backupSize, pitrBackups, prices]) => {
 			const tableSize = details.TableSizeBytes || 0;
 			const sizePlusOverhead = tableSize + 100*(details.ItemCount || 0); // 100 is for "overhead"
 
 			const calculations = this.calculationsForResource((key, seconds) => {
 				// https://aws.amazon.com/dynamodb/pricing/
-				const storage = (sizePlusOverhead / Gigabytes) * (seconds / SecondsInMonth)
+				const storage = (sizePlusOverhead / 1073741824 /* gigabytes */) * (seconds / 2592000 /* seconds/month */)
 				const pitrUsage = pitrBackups ? storage : 0;
-				const ondemandBackup = (backupSize / Gigabytes) * (seconds / SecondsInMonth);
+				const ondemandBackup = (backupSize / 1073741824 /* gigabytes */) * (seconds / 2592000 /* seconds/month */);
 
 				const replicated = !!details.GlobalTableVersion;
 

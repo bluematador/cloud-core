@@ -6,7 +6,7 @@ import { CloudWatchWorker } from './services/cloudwatch';
 import { Maybe } from 'purify-ts/Maybe';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { Service } from './service';
-import { Tier, Levels } from './pricing';
+import { RegionPrices, Levels, Tier } from './pricing';
 
 export abstract class RegionWorker {
 	private queue = new PriorityQueue<QueueItem>();
@@ -27,6 +27,10 @@ export abstract class RegionWorker {
 	abstract get workDelay(): number;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
 	protected abstract fillQueue(): void;
+
+	protected get pricing(): Promise<RegionPrices> {
+		return this.service.info.pricing.forRegion(this.region);
+	}
 
 	get partition(): string {
 		if (this.region.startsWith('us-gov-')) { return 'aws-us-gov'; }
@@ -218,7 +222,7 @@ export abstract class RegionWorker {
 	protected addResource(resource: ResourceDescriptor): void {
 		this.account.store.commit.addResource({
 			accountId: this.account.model.id,
-			service: this.service.name,
+			service: this.service.info.name,
 			region: this.region,
 			details: {},
 			tags: {},

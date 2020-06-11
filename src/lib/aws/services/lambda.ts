@@ -2,77 +2,67 @@ import Account from '../account';
 import AWS from 'aws-sdk';
 import Pricing from '../pricing';
 import RegionWorker from '../region-worker';
-import { RegionalService } from '../service';
+import Service from '../service';
+import ServiceInfo from '../service-info';
 
-export const Name: string = 'Lambda';
+export const Info: ServiceInfo = {
+	name: 'Lambda',
+	regions: [
+		'af-south-1',
+		'ap-east-1',
+		'ap-northeast-1',
+		'ap-northeast-2',
+		'ap-south-1',
+		'ap-southeast-1',
+		'ap-southeast-2',
+		'ca-central-1',
+		'cn-north-1',
+		'cn-northwest-1',
+		'eu-central-1',
+		'eu-north-1',
+		'eu-south-1',
+		'eu-west-1',
+		'eu-west-2',
+		'eu-west-3',
+		'me-south-1',
+		'sa-east-1',
+		'us-east-1',
+		'us-east-2',
+		'us-gov-east-1',
+		'us-gov-west-1',
+		'us-west-1',
+		'us-west-2',
+	],
+	caveats: [
+		'There is a cost for bandwidth, but AWS does not expose usage.',
+		'Lambda @Edge not implemented yet.',
+		'Provisioned Concurrency is either on or off, switches are not detected or included in calculations.',
+		'Amazon rounds function duration up to 100ms increments. We round the average up to simulate. Actual prices may be higher or lower.',
+	],
+	pricing: new Pricing([{
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/lambda/USD/current/lambda.json',
+		simple: {
+			'Lambda Duration': 'Duration',
+			'Lambda Requests': 'Requests',
+			'Lambda Duration-Provisioned': 'Provisioned-Duration',
+			'Lambda Provisioned-Concurrency': 'Provisioned-Concurrency',
+			'Lambda Edge-Duration': 'Edge-Duration',
+			'Lambda Edge-Requests': 'Edge-Requests',
+		},
+		tiered: {},
+		levels: {},
+	}]),
+};
 
-export default class LambdaService extends RegionalService<LambdaWorker> {
+export default class LambdaService extends Service<LambdaWorker> {
 	constructor(readonly account: Account) {
-		// https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
-		super(account, [
-			'af-south-1',
-			'ap-east-1',
-			'ap-northeast-1',
-			'ap-northeast-2',
-			'ap-south-1',
-			'ap-southeast-1',
-			'ap-southeast-2',
-			'ca-central-1',
-			'cn-north-1',
-			'cn-northwest-1',
-			'eu-central-1',
-			'eu-north-1',
-			'eu-south-1',
-			'eu-west-1',
-			'eu-west-2',
-			'eu-west-3',
-			'me-south-1',
-			'sa-east-1',
-			'us-east-1',
-			'us-east-2',
-			'us-gov-east-1',
-			'us-gov-west-1',
-			'us-west-1',
-			'us-west-2',
-		]);
-	}
-
-	get name(): string {
-		return Name;
-	}
-
-	get caveats(): string[] {
-		return [
-			'There is a cost for bandwidth, but AWS does not expose usage.',
-			'Lambda @Edge not implemented yet.',
-			'Provisioned Concurrency is either on or off, switches are not detected or included in calculations.',
-			'Amazon rounds function duration up to 100ms increments. We round the average up to simulate. Actual prices may be higher or lower.',
-		];
+		super(account, Info);
 	}
 
 	protected regionFactory(account: Account, region: string): LambdaWorker {
 		return new LambdaWorker(account, this, region);
 	}
 }
-
-export class LambdaPricing extends Pricing {
-	protected readonly simpleInfo = {
-		'Lambda Duration': 'Duration',
-		'Lambda Requests': 'Requests',
-		'Lambda Duration-Provisioned': 'Provisioned-Duration',
-		'Lambda Provisioned-Concurrency': 'Provisioned-Concurrency',
-		'Lambda Edge-Duration': 'Edge-Duration',
-		'Lambda Edge-Requests': 'Edge-Requests',
-	};
-	protected readonly tieredInfo = {};
-	protected readonly levelsInfo = {};
-
-	constructor() {
-		super('https://calculator.aws/pricing/2.0/meteredUnitMaps/lambda/USD/current/lambda.json');
-	}
-}
-
-export const pricing = new LambdaPricing();
 
 export class LambdaWorker extends RegionWorker {
 	private api: AWS.Lambda;
@@ -151,9 +141,7 @@ export class LambdaWorker extends RegionWorker {
 				dimensions: { 'FunctionName': lambda.FunctionName || '' },
 		}]);
 
-		const regionPricing = pricing.forRegion(this.region);
-
-		Promise.all([provisioned, usage, regionPricing]).then(([provisioned, usage, prices]) => {
+		Promise.all([provisioned, usage, this.pricing]).then(([provisioned, usage, prices]) => {
 			const memoryGB = (lambda.MemorySize || 0) / 1024;
 
 			const calculations = this.calculationsForResource((key, seconds) => {

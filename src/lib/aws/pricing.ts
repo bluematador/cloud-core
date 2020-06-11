@@ -52,15 +52,22 @@ const multiples: {[key: string]: number} = {
 	'EB': Math.pow(1024, 6),
 };
 
-export default abstract class Pricing {
+export default class Pricing {
 	protected promise: Promise<PricingData>;
 
-	constructor(url: string) {
-		this.promise = this.loadPromise(url);
+	constructor(readonly opts: PricingOpts) {
+		this.promise = this.loadAll(opts);
 	}
 
-	private loadPromise(url: string): Promise<PricingData> {
-		const proxy = corsProxy + url.replace('https://', '').replace('http://', '');
+	private loadAll(opts: PricingOpts): Promise<PricingData> {
+		const promises = opts.map(o => this.loadOne(o));
+		return Promise.all(promises).then(allPricings => {
+			return allPricings[0];
+		});
+	}
+
+	private loadOne(opts: PricingOpt): Promise<PricingData> {
+		const proxy = corsProxy + opts.url.replace('https://', '').replace('http://', '');
 
 		return Http.get(proxy).then(response => {
 			const data: PricingData = {};
@@ -70,7 +77,7 @@ export default abstract class Pricing {
 
 				const region = regionLookup[regionReadable];
 				if (region === undefined) {
-					console.log('unknown region in pricing', regionReadable, url);
+					console.log('unknown region in pricing', regionReadable, opts.url);
 					continue;
 				}
 
@@ -79,9 +86,9 @@ export default abstract class Pricing {
 					...response.body['regions'][regionReadable],
 				};
 				data[region] = {
-					simple: this.parseSimple(regionData),
-					tiered: this.parseTiered(regionData),
-					levels: this.parseLevels(regionData),
+					simple: this.parseSimple(regionData, opts.simple),
+					tiered: this.parseTiered(regionData, opts.tiered),
+					levels: this.parseLevels(regionData, opts.levels),
 				};
 			}
 
@@ -89,14 +96,7 @@ export default abstract class Pricing {
 		});
 	}
 
-	/* Name -> id */
-	protected abstract get simpleInfo(): {[key: string]: string};
-
-	/* Begins With -> id */
-	protected abstract get levelsInfo(): {[key: string]: string};
-	protected abstract get tieredInfo(): {[key: string]: string};
-
-	private parseSimple(data: any): SimplePrices {
+	private parseSimple(data: any, opts: Options): SimplePrices {
 		/**
 			Turn an object of these:
 				"WebSocket Connection Minutes": {
@@ -108,15 +108,15 @@ export default abstract class Pricing {
 		**/
 
 		return Object.fromEntries(
-			Object.keys(data).filter(k => k in this.simpleInfo).map(k => {
-				const newKey = this.simpleInfo[k];
+			Object.keys(data).filter(k => k in opts).map(k => {
+				const newKey = opts[k];
 				const value = Number(data[k].price);
 				return [newKey, value];
 			})
 		);
 	}
 
-	private parseTiered(data: any): TieredPrices {
+	private parseTiered(data: any, opts: Options): TieredPrices {
 		/**
 			Turn an object of these:
 				"API Calls Number of Request Next 667 million": {
@@ -175,8 +175,8 @@ export default abstract class Pricing {
 
 		// ASSUMPTION: on tiered, price always decreases for higher tiers
 		return Object.fromEntries(
-			Object.keys(this.tieredInfo).map(prefix => {
-				const outputKey = this.tieredInfo[prefix];
+			Object.keys(opts).map(prefix => {
+				const outputKey = opts[prefix];
 
 				return [
 					outputKey,
@@ -201,7 +201,7 @@ export default abstract class Pricing {
 		);
 	}
 
-	private parseLevels(data: any): LevelsPrices {
+	private parseLevels(data: any, opts: Options): LevelsPrices {
 		/**
 			Turn an object of these:
 				"Caching Memory Size 0 5": {
@@ -251,8 +251,8 @@ export default abstract class Pricing {
 		**/
 
 		return Object.fromEntries(
-			Object.keys(this.levelsInfo).map(prefix => {
-				const outputKey = this.levelsInfo[prefix];
+			Object.keys(opts).map(prefix => {
+				const outputKey = opts[prefix];
 
 				return [
 					outputKey,
@@ -276,6 +276,19 @@ export default abstract class Pricing {
 		return this.promise.then(data => data[region]);
 	}
 }
+
+export interface PricingOpt {
+	url: string
+
+	/* Name -> id */
+	simple: Options;
+	tiered: Options;
+
+	/* Begins With -> id */
+	levels: Options;
+}
+export type PricingOpts = PricingOpt[];
+export type Options = {[key: string]: string};
 
 export interface PricingData {
 	[region: string]: RegionPrices
