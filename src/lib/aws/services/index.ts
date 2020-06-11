@@ -12,7 +12,7 @@ export { default as Lambda } from './lambda';
 
 export const Info = [
 	ApiGateway.Info,
-	// CloudWatch.Info,
+	CloudWatch.Info,
 	DynamoDB.Info,
 	Kinesis.Info,
 	Lambda.Info,

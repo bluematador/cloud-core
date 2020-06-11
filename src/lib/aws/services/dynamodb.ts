@@ -177,7 +177,6 @@ export class DynamoDBWorker extends RegionWorker {
 				dimensions: { 'TableName': name },
 		}]);
 
-
 		Promise.all([details, usage, backupSize, pitrBackups, this.pricing]).then(([details, usage, backupSize, pitrBackups, prices]) => {
 			const tableSize = details.TableSizeBytes || 0;
 			const sizePlusOverhead = tableSize + 100*(details.ItemCount || 0); // 100 is for "overhead"

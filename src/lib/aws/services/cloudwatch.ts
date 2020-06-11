@@ -1,6 +1,6 @@
 import Account from '../account';
 import AWS from 'aws-sdk';
-import Pricing from '../pricing';
+import Pricing, { RegionPrices } from '../pricing';
 import RegionWorker from '../region-worker';
 import Service from '../service';
 import ServiceInfo from '../service-info';
@@ -35,11 +35,60 @@ export const Info: ServiceInfo = {
 		'us-west-2',
 	],
 	caveats: [
-		'Cloudwatch is not actually implemented yet. It only exists to help other services get usage.',
+		'Past usage / Creation date cannot be gathered on dashboards. Full-time usage assumed.',
+		'AWS is not returning composite alarms from the API.',
+		'Each call to GetMetricData, GetInsightRuleReport, and GetMetricWidgetImage assumes a single metric. Forecasts for API calls may be high.',
+		'Canaries are not supported in the SDK yet.',
+		'Custom metrics are counted even if they are not being actively updated.',
+		'Logs are not supported.',
+		'Insights are not supported.',
+		'Events are not supported.',
 	],
 	pricing: new Pricing([{
 		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/cloudwatch/USD/current/cloudwatch.json',
-		simple: {},
+		simple: {
+			// GetMetricStatistics, ListMetrics, PutMetricData, GetDashboard, ListDashboards, PutDashboard and DeleteDashboards requests
+			'API Request': 'api.default',
+			'API Request GetInsightRuleReport': 'api.insight',
+			'API Request GetMetricData': 'api.metricdata',
+			'API Request GetMetricWidgetImage': 'api.metricwidget',
+
+			'Alarm Standard': 'alarm.standard',
+			'Alarm High Resolution': 'alarm.highresolution',
+			'Alarm Composite': 'alarm.composite',
+			// 3x standard/highresolution for anomaly detection
+
+			'Logs Collected Data Ingestion': 'logs.ingest',
+			'Stored Data': 'logs.storage',
+
+			'Queried Logs Insights': 'logs.analyze-insights',
+			'Contributor Insights CloudWatchLogs': 'insights.cloudwatch.rule',
+			'Contributor Insights DynamoDB': 'insights.dynamo.rule',
+			'Event CloudWatchLog': 'insights.cloudwatch.events',
+			'Event DynamoDB': 'insights.dynamo.events',
+
+			'Canaries per Runs': 'canary.run', // not supported in the SDK yet
+
+			'Dashboard Basic Dashboard': 'dashboard.basic',
+		},
+		tiered: {
+			// All custom metrics charges are prorated by the hour and metered only when you send metrics to CloudWatch.
+			'Metric': 'custom.metrics',
+
+			// VPC flow logs and Global Accelerator flow logs qualify for the following pricing
+			'Delivered Logs': 'logs.s3upload',
+
+			// VPC and Route53 logs qualify for Vended Logs pricing
+			'Vended Logs': 'logs.vended',
+		},
+		levels: {},
+	}, {
+		url: 'https://calculator.aws/pricing/2.0/meteredUnitMaps/events/USD/current/events.json',
+		simple: {
+			'CloudWatch Events': 'events.default',
+			'CloudWatch Events Custom Event': 'events.custom',
+			'CloudWatch Events Discovery Event': 'events.discovery',
+		},
 		tiered: {},
 		levels: {},
 	}]),
@@ -67,6 +116,10 @@ export class CloudWatchWorker extends RegionWorker {
 			credentials: account.credentials,
 			region: region,
 		});
+	}
+
+	fakeArn(name: string): string {
+		return 'arn:' + this.partition + ':cloudwatch:' + this.region + ':' + this.account.model.cloudId + ':FAKE/' + name;
 	}
 
 	updatedCredentials(credentials: AWS.Credentials): void {
@@ -190,12 +243,255 @@ export class CloudWatchWorker extends RegionWorker {
 		});
 	}
 
-	protected fillQueue(): void {
-		// not done yet, but need other functions on this class for other services
+	private inspectDashboard(dashboard: AWS.CloudWatch.DashboardEntry): void {
+		const arn = dashboard.DashboardArn || '';
+
+		this.addResource({
+			id: arn,
+			kind: 'Dashboard',
+			name: dashboard.DashboardName || '',
+			region: 'global',
+			url: 'https://console.aws.amazon.com/cloudwatch/home?region=' + this.region + '#dashboards:name=' + encodeURIComponent(dashboard.DashboardName || ''),
+			details: {
+				Size: Number(dashboard.Size || '0'),
+			},
+		});
+
+		Promise.all([this.pricing]).then(([prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				// https://aws.amazon.com/cloudwatch/pricing/
+				const usage = seconds / 2592000; // 1 month
+
+				return {
+					Existence: this.simpleCalc(usage, prices.simple['dashboard.basic'], seconds),
+				};
+			});
+
+			this.account.store.commit.updateResource({
+				id: arn,
+				calculations,
+			});
+		}).catch(e => {
+			this.updateResourceError(arn, e);
+		});
 	}
 
-	protected reset(): void {
-		// nothing to do
+	private inspectCompositeAlarm(alarm: AWS.CloudWatch.CompositeAlarm): void {
+		const arn = '' + alarm.AlarmArn;
+
+		this.addResource({
+			id: arn,
+			name: '' + alarm.AlarmName,
+			kind: 'Composite Alarm',
+			url: 'https://console.aws.amazon.com/cloudwatch/home?region=' + this.region + '#alarmsV2:alarm/' + encodeURIComponent(alarm.AlarmName || ''),
+			details: {
+				AlarmDescription: '' + alarm.AlarmDescription,
+				StateValue: '' + alarm.StateValue,
+				AlarmRule: '' + alarm.AlarmRule,
+			},
+		});
+
+		Promise.all([this.pricing]).then(([prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				// https://aws.amazon.com/cloudwatch/pricing/
+				const usage = seconds / 2592000; // 1 month
+
+				return {
+					CompositeAlarm: this.simpleCalc(usage, prices.simple['alarm.composite'], seconds),
+				};
+			});
+
+			this.account.store.commit.updateResource({
+				id: arn,
+				calculations,
+			});
+		}).catch(e => {
+			this.updateResourceError(arn, e);
+		});
+	}
+
+	private inspectMetricAlarm(alarm: AWS.CloudWatch.MetricAlarm): void {
+		const arn = '' + alarm.AlarmArn;
+		const dimensions: AWS.CloudWatch.Dimensions = alarm.Dimensions || (alarm.Metrics && alarm.Metrics[0] && alarm.Metrics[0].MetricStat && alarm.Metrics[0].MetricStat.Metric && alarm.Metrics[0].MetricStat.Metric.Dimensions) || [];
+		const period = Number(alarm.Period || (alarm.Metrics && alarm.Metrics[0].MetricStat && alarm.Metrics[0].MetricStat.Period) || '60');
+
+		const isAnomaly = alarm.Metrics && alarm.Metrics.some(m => m.Expression && m.Expression.includes("ANOMALY"));
+		const highResolution = period < 60;
+
+		this.addResource({
+			id: arn,
+			name: '' + alarm.AlarmName,
+			kind: 'Metric Alarm',
+			url: 'https://console.aws.amazon.com/cloudwatch/home?region=' + this.region + '#alarmsV2:alarm/' + encodeURIComponent(alarm.AlarmName || ''),
+			details: {
+				AlarmDescription: '' + alarm.AlarmDescription,
+				AnomalyDetection: '' + isAnomaly,
+				StateValue: '' + alarm.StateValue,
+				MetricName: alarm.MetricName || (alarm.Metrics && alarm.Metrics[0].MetricStat && alarm.Metrics[0].MetricStat.Metric && alarm.Metrics[0].MetricStat.Metric.MetricName) || '',
+				Namespace: alarm.Namespace || (alarm.Metrics && alarm.Metrics[0].MetricStat && alarm.Metrics[0].MetricStat.Metric && alarm.Metrics[0].MetricStat.Metric.Namespace) || '',
+				Statistic: alarm.Statistic || (alarm.Metrics && alarm.Metrics[0].MetricStat && alarm.Metrics[0].MetricStat.Stat) || '',
+				Period: period,
+				HighResolution: '' + highResolution,
+				...(Object.fromEntries(dimensions.map(d => ['Dimension ' + d.Name, d.Value || '']))),
+			},
+		});
+
+		Promise.all([this.pricing]).then(([prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				// https://aws.amazon.com/cloudwatch/pricing/
+				let lineItem: string = highResolution ? 'HighResolution' : 'Standard';
+				lineItem += isAnomaly ? 'Anomaly' : '';
+
+				// rate is per "alarm metric" per month, but cloudwatch only allows 1 metric per alarm.
+				let rate: number = prices.simple[highResolution ? 'alarm.highresolution' : 'alarm.standard'];
+				rate *= isAnomaly ? 3 : 1; // anomaly metrics are 3x, but pricing doesn't have a line item for them
+
+				const usage = seconds / 2592000; // 1 month
+
+				return {
+					[lineItem]: this.simpleCalc(usage, rate, seconds),
+				};
+			});
+
+			this.account.store.commit.updateResource({
+				id: arn,
+				calculations,
+			});
+		}).catch(e => {
+			this.updateResourceError(arn, e);
+		});
+	}
+
+	private inspectApiUsage(): void {
+		// this item doesn't have an arn, so we'll make one up.
+		const arn = this.fakeArn('apiusage');
+
+		this.addResource({
+			id: arn,
+			name: 'API Usage',
+			kind: 'API Usage',
+			url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~();query=~'*7bAWS*2fUsage*2cClass*2cResource*2cService*2cType*7d*20Cloudwatch",
+		});
+
+		const apis = [
+			'GetMetricData',
+			'GetInsightRuleReport',
+			'GetMetricWidgetImage',
+			'GetMetricStatistics',
+			'ListMetrics',
+			'PutMetricData',
+			'GetDashboard',
+			'ListDashboards',
+			'PutDashboard',
+			'DeleteDashboards',
+		];
+
+		const rates: {[key: string]: string} = {
+			'GetMetricData': 'api.metricdata',
+			'GetInsightRuleReport': 'api.insight',
+			'GetMetricWidgetImage': 'api.metricwidget',
+		};
+
+		const calls = this.summarizeMetrics(apis.map(api => {
+			return {
+				id: api.toLowerCase(),
+				metric: 'CallCount',
+				namespace: 'AWS/Usage',
+				stat: 'Sum',
+				unit: 'None',
+				dimensions: {
+					'Resource': api,
+					'Service': 'CloudWatch',
+					'Type': 'API',
+					'Class': 'None',
+				},
+			};
+		}));
+
+		Promise.all([calls, this.pricing]).then(([calls, prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				return Object.fromEntries(apis.map(api => {
+					return [
+						api,
+						this.simpleCalc(
+							calls.metrics[api.toLowerCase()][key].sum, /* # calls */
+							prices.simple[(api in rates) ? rates[api] : 'api.default'], /* Rate per call */
+							seconds
+						),
+					];
+				}));
+			});
+
+			this.account.store.commit.updateResource({
+				id: arn,
+				calculations,
+			});
+		}).catch(e => {
+			this.updateResourceError(arn, e);
+		});
+	}
+
+	private inspectCustomMetricUsage(): void {
+		// this item doesn't have an arn, so we'll make one up.
+		const arn = this.fakeArn('metrics');
+
+		this.addResource({
+			id: arn,
+			name: 'Custom Metrics',
+			kind: 'Custom Metrics',
+			url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~()",
+		});
+
+		const countMetrics = this.enqueuePagedRequestFold(20, this.api.listMetrics(), 0, (data, fold) => {
+			const count = data.Metrics ? data.Metrics.count(m => !(m.Namespace || '').startsWith('AWS/')) : 0;
+			return fold + count;
+		});
+
+		Promise.all([countMetrics, this.pricing]).then(([countMetrics, prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				return {
+					CustomMetrics: this.tieredCalc(countMetrics / 2592000, prices.tiered['custom.metrics'], seconds),
+				}
+			});
+
+			this.account.store.commit.updateResource({
+				id: arn,
+				details: {
+					Count: countMetrics,
+				},
+				calculations,
+			});
+		}).catch(e => {
+			this.updateResourceError(arn, e);
+		});
+	}
+
+	protected fillQueue(): void {
+		this.enqueuePagedRequest(0, this.api.describeAlarms(), data => {
+			if (data.CompositeAlarms) {
+				data.CompositeAlarms.forEach(a => this.inspectCompositeAlarm(a));
+				if (data.CompositeAlarms.length > 0) {
+					console.log(data.CompositeAlarms);
+				}
+			}
+
+			if (data.MetricAlarms) {
+				data.MetricAlarms.forEach(a => this.inspectMetricAlarm(a));
+			}
+		});
+
+		// dashboard entities span all regions. only request for one.
+		if (this.region === 'us-east-1') {
+			this.enqueuePagedRequest(0, this.api.listDashboards(), data => {
+				if (data.DashboardEntries) {
+					data.DashboardEntries.forEach(d => this.inspectDashboard(d));
+				}
+			});
+		}
+
+		this.inspectApiUsage();
+
+		this.inspectCustomMetricUsage();
 	}
 }
 
