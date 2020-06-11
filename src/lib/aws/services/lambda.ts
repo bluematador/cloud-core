@@ -37,7 +37,7 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 		]);
 	}
 
-	get service(): string {
+	get name(): string {
 		return Name;
 	}
 
@@ -51,7 +51,7 @@ export default class LambdaService extends RegionalService<LambdaWorker> {
 	}
 
 	protected regionFactory(account: Account, region: string): LambdaWorker {
-		return new LambdaWorker(account, region);
+		return new LambdaWorker(account, this, region);
 	}
 }
 
@@ -78,7 +78,7 @@ export class LambdaWorker extends RegionWorker {
 	private api: AWS.Lambda;
 	readonly workDelay = 500;
 
-	constructor(readonly account: Account, readonly region: string) {
+	constructor(readonly account: Account, readonly service: LambdaService, readonly region: string) {
 		super();
 
 		this.api = new AWS.Lambda({
@@ -95,6 +95,20 @@ export class LambdaWorker extends RegionWorker {
 	}
 
 	private inspectLambda(lambda: AWS.Lambda.FunctionConfiguration): void {
+		const arn = lambda.FunctionArn || '';
+
+		this.addResource({
+			id: arn,
+			kind: 'Function',
+			name: lambda.FunctionName || '',
+			url: 'https://console.aws.amazon.com/lambda/home?region=' + this.region + '#/functions/' + encodeURIComponent(lambda.FunctionName || ''),
+			details: {
+				MemorySize: lambda.MemorySize || '',
+				Role: lambda.Role || '',
+				Runtime: lambda.Runtime || '',
+			},
+		});
+
 		// check provisioned concurrency
 		const provisioned = this.enqueuePagedRequestFold(
 			100,
@@ -111,10 +125,10 @@ export class LambdaWorker extends RegionWorker {
 			}
 		);
 
-		this.enqueuePagedRequest(999, this.api.listTags({Resource: lambda.FunctionArn || ''}), (data) => {
+		this.enqueuePagedRequest(999, this.api.listTags({Resource: arn}), (data) => {
 			if (data.Tags && Object.keys(data.Tags).length > 0) {
 				this.account.store.commit.updateResource({
-					id: lambda.FunctionArn || '',
+					id: arn,
 					tags: data.Tags,
 				});
 			}
@@ -161,17 +175,14 @@ export class LambdaWorker extends RegionWorker {
 			});
 
 			this.account.store.commit.updateResource({
-				id: lambda.FunctionArn || '',
+				id: arn,
 				details: {
 					ProvisionedConcurrency: provisioned,
 				},
 				calculations,
 			});
 		}).catch(e => {
-			this.account.store.commit.updateResource({
-				id: lambda.FunctionArn || '',
-				error: e,
-			});
+			this.updateResourceError(arn, e);
 		});
 	}
 
@@ -179,24 +190,6 @@ export class LambdaWorker extends RegionWorker {
 		this.enqueuePagedRequest(0, this.api.listFunctions(), data => {
 			if (data.Functions && data.Functions.length > 0) {
 				data.Functions.forEach(f => this.inspectLambda(f));
-
-				this.account.store.commit.addResources(data.Functions.map(f => {
-					return {
-						id: f.FunctionArn || '',
-						kind: 'Function',
-						accountId: this.account.model.id,
-						name: f.FunctionName || '',
-						service: Name,
-						region: this.region,
-						url: 'https://console.aws.amazon.com/lambda/home?region=' + this.region + '#/functions/' + encodeURIComponent(f.FunctionName || ''),
-						details: {
-							MemorySize: f.MemorySize || '',
-							Role: f.Role || '',
-							Runtime: f.Runtime || '',
-						},
-						tags: {},
-					};
-				}));
 			}
 		});
 	}

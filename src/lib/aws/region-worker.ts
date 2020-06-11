@@ -1,11 +1,12 @@
 import Account from './account';
 import AWS from 'aws-sdk';
-import { Tier, Levels } from './pricing';
 import PriorityQueue from '../datastructures/priority-queue';
-import { AggregationTimeframe, Calculation, Calculations, CalculationDetail } from '@/store/resources';
+import { AggregationTimeframe, Calculation, Calculations, CalculationDetail, Detail } from '@/store/resources';
 import { CloudWatchWorker } from './services/cloudwatch';
 import { Maybe } from 'purify-ts/Maybe';
 import { PromiseResult } from 'aws-sdk/lib/request';
+import { Service } from './service';
+import { Tier, Levels } from './pricing';
 
 export abstract class RegionWorker {
 	private queue = new PriorityQueue<QueueItem>();
@@ -21,6 +22,7 @@ export abstract class RegionWorker {
 	private _progressErrors = 0;
 
 	abstract get account(): Account;
+	abstract get service(): Service<any>;
 	abstract get region(): string;
 	abstract get workDelay(): number;
 	abstract updatedCredentials(credentials: AWS.Credentials): void;
@@ -214,6 +216,24 @@ export abstract class RegionWorker {
 		};
 	}
 
+	protected addResource(resource: ResourceDescriptor): void {
+		this.account.store.commit.addResource({
+			accountId: this.account.model.id,
+			service: this.service.name,
+			region: this.region,
+			details: {},
+			tags: {},
+			...resource,
+		});
+	}
+
+	protected updateResourceError(id: string, error: any): void {
+		this.account.store.commit.updateResource({
+			id: id,
+			error: error,
+		});
+	}
+
 	start(): void {
 		if (this._started) {
 			return;
@@ -283,3 +303,14 @@ interface QueueItem {
 }
 
 export type CancelToken = number;
+
+export interface ResourceDescriptor {
+	id: string
+	kind: string
+	name: string
+	url: string
+	details?: {[key: string]: Detail}
+	tags?: {[key: string]: string}
+	region?: string
+	calculations?: Calculations
+}

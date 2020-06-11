@@ -52,10 +52,8 @@ const mod = defineModule({
 	},
 	getters: {},
 	mutations: {
-		addResources(state, resources: Resource[]): void {
-			for (const resource of resources) {
-				Vue.set(state.all, state.all.length, resource);
-			}
+		addResource(state, resource: Resource): void {
+			Vue.set(state.all, state.all.length, resource);
 		},
 		updateResource(state, payload: UpdatePayload): void {
 			const resource = state.all.find(r => r.id === payload.id);

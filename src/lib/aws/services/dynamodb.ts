@@ -40,7 +40,7 @@ export default class DynamoDBService extends RegionalService<DynamoDBWorker> {
 		]);
 	}
 
-	get service(): string {
+	get name(): string {
 		return Name;
 	}
 
@@ -54,7 +54,7 @@ export default class DynamoDBService extends RegionalService<DynamoDBWorker> {
 	}
 
 	protected regionFactory(account: Account, region: string): DynamoDBWorker {
-		return new DynamoDBWorker(account, region);
+		return new DynamoDBWorker(account, this, region);
 	}
 }
 
@@ -90,7 +90,7 @@ export class DynamoDBWorker extends RegionWorker {
 	private api: AWS.DynamoDB;
 	readonly workDelay = 500;
 
-	constructor(readonly account: Account, readonly region: string) {
+	constructor(readonly account: Account, readonly service: DynamoDBService, readonly region: string) {
 		super();
 
 		this.api = new AWS.DynamoDB({
@@ -112,6 +112,13 @@ export class DynamoDBWorker extends RegionWorker {
 
 	private inspectTable(name: string): void {
 		const arn = this.arnForTable(name);
+
+		this.addResource({
+			id: arn,
+			kind: 'Table',
+			name: name,
+			url: 'https://console.aws.amazon.com/dynamodb/home?region=' + this.region + '#tables:selected=' + encodeURIComponent(name) + ';tab=overview',
+		});
 
 		const details = this.enqueueRequest(100, this.api.describeTable({TableName: name}), data => {
 			if (!data.Table) { throw 'AWS is a liar'; }
@@ -222,10 +229,7 @@ export class DynamoDBWorker extends RegionWorker {
 				calculations,
 			});
 		}).catch(e => {
-			this.account.store.commit.updateResource({
-				id: arn,
-				error: e,
-			});
+			this.updateResourceError(arn, e);
 		});
 	}
 
@@ -233,20 +237,6 @@ export class DynamoDBWorker extends RegionWorker {
 		this.enqueuePagedRequest(0, this.api.listTables(), data => {
 			if (data.TableNames) {
 				data.TableNames.forEach(t => this.inspectTable(t));
-
-				this.account.store.commit.addResources(data.TableNames.map(t => {
-					return {
-						id: this.arnForTable(t),
-						kind: 'Table',
-						accountId: this.account.model.id,
-						name: t,
-						service: Name,
-						region: this.region,
-						url: 'https://console.aws.amazon.com/dynamodb/home?region=' + this.region + '#tables:selected=' + encodeURIComponent(t) + ';tab=overview',
-						details: {},
-						tags: {},
-					};
-				}));
 			}
 		});
 	}

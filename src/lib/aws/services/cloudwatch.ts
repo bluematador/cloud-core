@@ -38,7 +38,7 @@ export default class CloudWatchService extends RegionalService<CloudWatchWorker>
 		]);
 	}
 
-	get service(): string {
+	get name(): string {
 		return Name;
 	}
 
@@ -49,7 +49,7 @@ export default class CloudWatchService extends RegionalService<CloudWatchWorker>
 	}
 
 	protected regionFactory(account: Account, region: string): CloudWatchWorker {
-		return new CloudWatchWorker(account, region);
+		return new CloudWatchWorker(account, this, region);
 	}
 }
 
@@ -69,7 +69,7 @@ export class CloudWatchWorker extends RegionWorker {
 	private api: AWS.CloudWatch;
 	readonly workDelay = 100;
 
-	constructor(readonly account: Account, readonly region: string) {
+	constructor(readonly account: Account, readonly service: CloudWatchService, readonly region: string) {
 		super();
 
 		this.api = new AWS.CloudWatch({

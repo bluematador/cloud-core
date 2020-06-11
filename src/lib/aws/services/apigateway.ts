@@ -37,7 +37,7 @@ export default class ApiGatewayService extends RegionalService<ApiGatewayWorker>
 		]);
 	}
 
-	get service(): string {
+	get name(): string {
 		return Name;
 	}
 
@@ -49,7 +49,7 @@ export default class ApiGatewayService extends RegionalService<ApiGatewayWorker>
 	}
 
 	protected regionFactory(account: Account, region: string): ApiGatewayWorker {
-		return new ApiGatewayWorker(account, region);
+		return new ApiGatewayWorker(account, this, region);
 	}
 }
 
@@ -77,7 +77,7 @@ export class ApiGatewayWorker extends RegionWorker {
 	private api: AWS.APIGateway;
 	readonly workDelay = 500;
 
-	constructor(readonly account: Account, readonly region: string) {
+	constructor(readonly account: Account, readonly service: ApiGatewayService, readonly region: string) {
 		super();
 
 		this.api = new AWS.APIGateway({
@@ -99,6 +99,17 @@ export class ApiGatewayWorker extends RegionWorker {
 
 	private inspectGateway(rest: AWS.APIGateway.RestApi): void {
 		const arn = this.arnForRest(rest);
+
+		this.addResource({
+			id: arn,
+			kind: 'Rest API',
+			name: rest.name || '',
+			url: 'https://console.aws.amazon.com/apigateway/home?region=' + this.region + '#/apis/' + encodeURIComponent(rest.id || '') + '/dashboard',
+			details: {
+				Description: rest.description || '',
+			},
+			tags: rest.tags || {},
+		});
 
 		const cacheInitial: {[id: string]: string} = {};
 		const caches = this.enqueuePagedRequestFold(999, this.api.getStages({restApiId: rest.id || ''}), cacheInitial, (data, fold) => {
@@ -158,33 +169,14 @@ export class ApiGatewayWorker extends RegionWorker {
 				calculations,
 			});
 		}).catch(e => {
-			this.account.store.commit.updateResource({
-				id: arn,
-				error: e,
-			});
+			this.updateResourceError(arn, e);
 		});
 	}
 
 	protected fillQueue(): void {
 		this.enqueuePagedRequest(0, this.api.getRestApis(), data => {
-			if (data.items && data.items.length > 0) {
+			if (data.items) {
 				data.items.forEach(i => this.inspectGateway(i));
-
-				this.account.store.commit.addResources(data.items.map(i => {
-					return {
-						id: this.arnForRest(i),
-						kind: 'Rest API',
-						accountId: this.account.model.id,
-						name: i.name || '',
-						service: Name,
-						region: this.region,
-						url: 'https://console.aws.amazon.com/apigateway/home?region=' + this.region + '#/apis/' + encodeURIComponent(i.id || '') + '/dashboard',
-						details: {
-							Description: i.description || '',
-						},
-						tags: i.tags || {},
-					};
-				}));
 			}
 		});
 	}

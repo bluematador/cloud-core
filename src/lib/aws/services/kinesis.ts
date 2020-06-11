@@ -39,7 +39,7 @@ export default class KinesisService extends RegionalService<KinesisWorker> {
 		]);
 	}
 
-	get service(): string {
+	get name(): string {
 		return Name;
 	}
 
@@ -50,7 +50,7 @@ export default class KinesisService extends RegionalService<KinesisWorker> {
 	}
 
 	protected regionFactory(account: Account, region: string): KinesisWorker {
-		return new KinesisWorker(account, region);
+		return new KinesisWorker(account, this, region);
 	}
 }
 
@@ -77,7 +77,7 @@ export class KinesisWorker extends RegionWorker {
 	private api: AWS.Kinesis;
 	readonly workDelay = 500;
 
-	constructor(readonly account: Account, readonly region: string) {
+	constructor(readonly account: Account, readonly service: KinesisService, readonly region: string) {
 		super();
 
 		this.api = new AWS.Kinesis({
@@ -99,6 +99,13 @@ export class KinesisWorker extends RegionWorker {
 
 	private inspectStream(stream: string): void {
 		const arn = this.arnForStream(stream);
+
+		this.addResource({
+			id: arn,
+			kind: 'Stream',
+			name: stream,
+			url: 'https://console.aws.amazon.com/kinesis/home?region=' + this.region + '#/streams/details/' + encodeURIComponent(stream) + '/details',
+		});
 
 		const details = this.enqueueRequest(100, this.api.describeStream({StreamName: stream}), data => {
 			if (!data.StreamDescription) { throw 'AWS is a liar'; }
@@ -173,10 +180,7 @@ export class KinesisWorker extends RegionWorker {
 				calculations,
 			});
 		}).catch(e => {
-			this.account.store.commit.updateResource({
-				id: arn,
-				error: e,
-			});
+			this.updateResourceError(arn, e);
 		});
 	}
 
@@ -184,20 +188,6 @@ export class KinesisWorker extends RegionWorker {
 		this.enqueuePagedRequest(0, this.api.listStreams(), data => {
 			if (data.StreamNames) {
 				data.StreamNames.forEach(s => this.inspectStream(s));
-
-				this.account.store.commit.addResources(data.StreamNames.map(s => {
-					return {
-						id: this.arnForStream(s),
-						kind: 'Stream',
-						accountId: this.account.model.id,
-						name: s,
-						service: Name,
-						region: this.region,
-						url: 'https://console.aws.amazon.com/kinesis/home?region=' + this.region + '#/streams/details/' + encodeURIComponent(s) + '/details',
-						details: {},
-						tags: {},
-					};
-				}));
 			}
 		});
 	}
