@@ -208,10 +208,13 @@ export default class Resources extends Vue {
 				sorted = filtered.sortBy(r => accounts[r.accountId]);
 				break;
 			case 'service':
-				sorted = filtered.sortBy(r => r.service)
+				sorted = filtered.sortBy(r => r.service);
+				break;
+			case 'kind':
+				sorted = filtered.sortBy(r => r.kind);
 				break;
 			case 'region':
-				sorted = filtered.sortBy(r => r.region)
+				sorted = filtered.sortBy(r => r.region);
 				break;
 			case 'name':
 				sorted = filtered.sortBy(r => r.name.toLowerCase());
