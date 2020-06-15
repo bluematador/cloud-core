@@ -366,13 +366,6 @@ export class CloudWatchWorker extends RegionWorker {
 		// this item doesn't have an arn, so we'll make one up.
 		const arn = this.fakeArn('apiusage');
 
-		this.addResource({
-			id: arn,
-			name: 'API Usage',
-			kind: 'API Usage',
-			url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~();query=~'*7bAWS*2fUsage*2cClass*2cResource*2cService*2cType*7d*20Cloudwatch",
-		});
-
 		const apis = [
 			'GetMetricData',
 			'GetInsightRuleReport',
@@ -422,8 +415,11 @@ export class CloudWatchWorker extends RegionWorker {
 				}));
 			});
 
-			this.account.store.commit.updateResource({
+			this.addResource({
 				id: arn,
+				name: 'API Usage',
+				kind: 'API Usage',
+				url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~();query=~'*7bAWS*2fUsage*2cClass*2cResource*2cService*2cType*7d*20Cloudwatch",
 				calculations,
 			});
 		}).catch(e => {
@@ -434,13 +430,6 @@ export class CloudWatchWorker extends RegionWorker {
 	private inspectCustomMetricUsage(): void {
 		// this item doesn't have an arn, so we'll make one up.
 		const arn = this.fakeArn('metrics');
-
-		this.addResource({
-			id: arn,
-			name: 'Custom Metrics',
-			kind: 'Custom Metrics',
-			url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~()",
-		});
 
 		const countMetrics = this.enqueuePagedRequestFold(20, this.api.listMetrics(), 0, (data, fold) => {
 			const count = data.Metrics ? data.Metrics.count(m => !(m.Namespace || '').startsWith('AWS/')) : 0;
@@ -454,8 +443,11 @@ export class CloudWatchWorker extends RegionWorker {
 				}
 			});
 
-			this.account.store.commit.updateResource({
+			this.addResource({
 				id: arn,
+				name: 'Custom Metrics',
+				kind: 'Custom Metrics',
+				url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~()",
 				details: {
 					Count: countMetrics,
 				},

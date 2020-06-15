@@ -43,6 +43,33 @@ export interface CalculationDetail {
 	subtotal1h: number // subtotal for 1 hour (normalized)
 }
 
+function calculateTotals(resource: Resource): void {
+	if (!resource.calculations) { return; }
+
+	for (const time of aggregationTimeframes) {
+		const items = resource.calculations[time];
+
+		let subtotal = 0;
+		let subtotal1h = 0;
+
+		for (const item in items) {
+			if (item === 'total') { continue; }
+
+			subtotal += items[item].subtotal;
+			subtotal1h += items[item].subtotal1h;
+		}
+
+		const totalItem: CalculationDetail = {
+			usage: 0,
+			rate: 0,
+			subtotal,
+			subtotal1h,
+		};
+
+		Vue.set(resource.calculations[time], 'total', totalItem);
+	}
+}
+
 const mod = defineModule({
 	strict: process.env.NODE_ENV !== 'production',
 	state: (): ResourcesState => {
@@ -54,6 +81,7 @@ const mod = defineModule({
 	mutations: {
 		addResource(state, resource: Resource): void {
 			Vue.set(state.all, state.all.length, resource);
+			calculateTotals(resource);
 		},
 		updateResource(state, payload: UpdatePayload): void {
 			const resource = state.all.find(r => r.id === payload.id);
@@ -76,30 +104,7 @@ const mod = defineModule({
 
 				if (payload.calculations) {
 					Vue.set(resource, 'calculations', payload.calculations);
-					if (!resource.calculations) { throw 'never'; }
-
-					for (const time of aggregationTimeframes) {
-						const items = resource.calculations[time];
-
-						let subtotal = 0;
-						let subtotal1h = 0;
-
-						for (const item in items) {
-							if (item === 'total') { continue; }
-
-							subtotal += items[item].subtotal;
-							subtotal1h += items[item].subtotal1h;
-						}
-
-						const totalItem: CalculationDetail = {
-							usage: 0,
-							rate: 0,
-							subtotal,
-							subtotal1h,
-						};
-
-						Vue.set(resource.calculations[time], 'total', totalItem);
-					}
+					calculateTotals(resource);
 				}
 			}
 		},
