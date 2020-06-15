@@ -176,7 +176,7 @@ export class LambdaWorker extends RegionWorker {
 
 	protected fillQueue(): void {
 		this.enqueuePagedRequest(0, this.api.listFunctions(), data => {
-			if (data.Functions && data.Functions.length > 0) {
+			if (data.Functions) {
 				data.Functions.forEach(f => this.inspectLambda(f));
 			}
 		});
