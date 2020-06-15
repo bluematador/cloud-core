@@ -30,9 +30,11 @@ const regions = {
 };
 
 const ignore = {
-	'Any': true,
+	'Any': true, // usually applies to "All"
+	'': true, // not been useful so far
 	'US West (Los Angeles)': true, // https://aws.amazon.com/blogs/aws/aws-now-available-from-a-local-zone-in-los-angeles/
 	'US ISOB East (Ohio)': true, // no idea what this is.
+	'US ISO East': true, // no idea what this is.
 }
 
 const regionLookup = Object.fromEntries(Object.entries(regions).map(([key, value]) => [value, key]));

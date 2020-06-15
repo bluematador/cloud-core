@@ -20,6 +20,7 @@ export class Account {
 	readonly dynamodb: Services.DynamoDB;
 	readonly kinesis: Services.Kinesis;
 	readonly lambda: Services.Lambda;
+	readonly sns: Services.SNS;
 
 	readonly store: AppStore;
 
@@ -33,6 +34,7 @@ export class Account {
 		this.dynamodb = new Services.DynamoDB(this);
 		this.kinesis = new Services.Kinesis(this);
 		this.lambda = new Services.Lambda(this);
+		this.sns = new Services.SNS(this);
 
 		this.services = [
 			this.apigateway,
@@ -40,6 +42,7 @@ export class Account {
 			this.dynamodb,
 			this.kinesis,
 			this.lambda,
+			this.sns,
 		];
 
 		this.updateProgress();
