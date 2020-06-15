@@ -108,7 +108,7 @@
 						<tbody>
 							<tr v-for="resource in pagedResources" :key="resource.id" :class="{'table-danger': resource.error !== undefined}">
 								<td>
-									<a :href="resource.url" target="_blank" class="mr-2"><i class="fas fa-external-link-alt"></i></a>
+									<a :href="resource.url" target="_blank" @click="linkTrack(resource)" class="mr-2"><i class="fas fa-external-link-alt"></i></a>
 									{{resource.name}}
 								</td>
 								<td v-if="resource.error !== undefined" colspan="1" class="text-center">
@@ -149,6 +149,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { Account } from '../store/accounts';
 import { Resource } from '../store/resources';
 import CollapsingCard from './CollapsingCard.vue';
+import ga from '@/lib/google-analytics';
 import Pages from './Pages.vue';
 
 type SortOptions = 'account'|'service'|'kind'|'region'|'name'|'forecast';
@@ -275,32 +276,39 @@ export default class Resources extends Vue {
 	}
 
 	toggleAccount(id: string) {
+		ga.event('Resources', 'filter-account').send();
 		this.toggle(id, this.disabledAccounts);
 	}
 
 	toggleService(id: string) {
+		ga.event('Resources', 'filter-service').send();
 		this.toggle(id, this.disabledServices);
 	}
 
 	toggleKind(id: string) {
+		ga.event('Resources', 'filter-kind').send();
 		this.toggle(id, this.disabledKinds);
 	}
 
 	toggleRegion(id: string) {
+		ga.event('Resources', 'filter-region').send();
 		this.toggle(id, this.disabledRegions);
 	}
 
 	changePage(newPage: number) {
+		ga.event('Resources', 'switch-page').send();
 		this.page = newPage;
 		window.scrollTo(0, 0);
 	}
 
 	changePageSize(size: number) {
+		ga.event('Resources', 'page-size').send();
 		this.page = 0;
 		this.pageSize = size;
 	}
 
 	changeSort(id: SortOptions) {
+		ga.event('Resources', 'sort-' + id).send();
 		if (id === this.sort) {
 			this.sortAsc = !this.sortAsc;
 		}
@@ -308,6 +316,10 @@ export default class Resources extends Vue {
 			this.sort = id;
 			this.sortAsc = (id !== 'forecast');
 		}
+	}
+
+	linkTrack(resource: Resource) {
+		ga.event('Resources', 'link', [resource.region, resource.service].join(' ')).send();
 	}
 }
 </script>

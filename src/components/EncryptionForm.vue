@@ -24,6 +24,7 @@
 
 <script lang="ts">
 import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
+import ga from '@/lib/google-analytics';
 
 @Component
 export default class EncryptionForm extends Vue {
@@ -62,16 +63,19 @@ export default class EncryptionForm extends Vue {
 		this.validated = true;
 
 		if (!this.formRef.checkValidity()) {
+			ga.event('Accounts', 'encrypt-invalid').send();
 			return;
 		}
 
 		if (this.decryptingMode && !this.$store.direct.getters.keyCanDecrypt(this.key)) {
+			ga.event('Accounts', 'decrypt-fail').send();
 			this.decryptionFailed = true;
 			this.keyInputRef.focus();
 			return;
 		}
 
 		this.$store.direct.commit.setEncryptionKey(this.key);
+		ga.event('Accounts', 'encrypt-save').send();
 		this.close();
 	}
 

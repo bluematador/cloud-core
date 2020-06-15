@@ -67,6 +67,7 @@
 <script lang="ts">
 import { Component, Prop, Ref, Vue } from 'vue-property-decorator';
 import { Account } from '../store/accounts';
+import ga from '@/lib/google-analytics';
 
 @Component
 export default class AccountForm extends Vue {
@@ -148,24 +149,29 @@ export default class AccountForm extends Vue {
 
 	save(): void {
 		this.validated = true;
-		if (this.formRef.checkValidity()) {
-			const account = this.original;
-
-			this.$store.direct.commit.upsertAccount({
-				id: account ? account.id : ('' + new Date().getTime()),
-				name: this.name,
-				access: this.access,
-				secret: this.secret,
-				enabled: this.enabled,
-				cloudId: account ? account.cloudId : undefined,
-			});
-
-			if (this.addEncryptionKey) {
-				this.$store.direct.commit.setEncryptionKey(this.encryptionKey);
-			}
-
-			this.close();
+		if (!this.formRef.checkValidity()) {
+			ga.event('Accounts', 'edit-invalid').send();
+			return;
 		}
+
+		const account = this.original;
+
+		this.$store.direct.commit.upsertAccount({
+			id: account ? account.id : ('' + new Date().getTime()),
+			name: this.name,
+			access: this.access,
+			secret: this.secret,
+			enabled: this.enabled,
+			cloudId: account ? account.cloudId : undefined,
+		});
+		ga.event('Accounts', 'save').send();
+
+		if (this.addEncryptionKey) {
+			ga.event('Accounts', 'encrypt-save').send();
+			this.$store.direct.commit.setEncryptionKey(this.encryptionKey);
+		}
+
+		this.close();
 	}
 
 	close(): void {

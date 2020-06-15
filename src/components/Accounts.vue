@@ -23,7 +23,7 @@
 						<i class="fas fa-plus"></i>
 						Create New
 					</button>
-					<button @click.prevent="view = 'encryptionForm'" class="ml-2 mr-2 btn btn-secondary">
+					<button @click.prevent="encrypt()" class="ml-2 mr-2 btn btn-secondary">
 						<i class="fas fa-lock"></i>
 						{{encryptionKey === undefined ? 'Encrypt &amp; Save Locally' : 'Change Encryption Key'}}
 					</button>
@@ -90,6 +90,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import AccountForm from './AccountForm.vue';
 import EncryptionForm from './EncryptionForm.vue';
+import ga from '@/lib/google-analytics';
 
 @Component({
 	components: {
@@ -117,25 +118,35 @@ export default class Accounts extends Vue {
 		return this.$store.direct.getters.countEncryptedAccounts();
 	}
 
+	encrypt() {
+		ga.event('Accounts', 'encrypt-form').send();
+		this.view = 'encryptionForm';
+	}
+
 	editAccount(id: string): void {
+		ga.event('Accounts', 'edit-form').send();
 		this.accountFormId = id;
 		this.view = 'accountForm';
 	}
 
 	addAccount(): void {
+		ga.event('Accounts', 'add-form').send();
 		this.accountFormId = '';
 		this.view = 'accountForm';
 	}
 
 	deleteAccount(id: string): void {
+		ga.event('Accounts', 'delete').send();
 		this.$store.direct.commit.removeAccount(id);
 	}
 
 	testAccount(id: string): void {
+		ga.event('Accounts', 'test').send();
 		this.$store.direct.dispatch.testAccountCredentials(id);
 	}
 
 	wipeEverything(): void {
+		ga.event('Accounts', 'wipe').send();
 		this.$store.direct.commit.wipeEverything();
 	}
 }

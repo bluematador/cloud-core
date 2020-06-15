@@ -1,5 +1,6 @@
 import * as Services from './services';
 import AWS from 'aws-sdk';
+import ga from '@/lib/google-analytics';
 import Service from './service';
 import store, { AppStore } from '../../store';
 import { Account as AccountModel } from '../../store/accounts';
@@ -90,11 +91,13 @@ export class Account {
 				id: this.model.id,
 				cloudId: response.Account,
 			});
+			ga.event('Accounts', 'test-success').send();
 		}).catch((err) => {
 			this.store.commit.accountTested({
 				id: this.model.id,
 				error: err.toString(),
 			});
+			ga.event('Accounts', 'test-fail').send();
 		});
 	}
 
@@ -104,6 +107,7 @@ export class Account {
 		}
 
 		this.services.forEach(service => service.start());
+		ga.event('Discovery', 'start').send();
 	}
 
 	stop(): void {
@@ -112,6 +116,7 @@ export class Account {
 		}
 
 		this.services.forEach(service => service.stop());
+		ga.event('Discovery', 'stop').send();
 	}
 
 	updateProgress(): Progress {
@@ -123,6 +128,7 @@ export class Account {
 		};
 
 		this.store.commit.upsertProgress(progress);
+		ga.event('Discovery', 'progress', 'Percent Done', progress.done / progress.total).send();
 
 		return progress;
 	}
@@ -137,6 +143,7 @@ export class Account {
 
 		this.services.forEach(service => service.resetProgress());
 		this.store.commit.deleteProgress(this._model.id);
+		ga.event('Discovery', 'reset-progress').send();
 	}
 
 	/**
@@ -150,6 +157,7 @@ export class Account {
 		this.stop();
 		this.resetProgress();
 		this.store.commit.deleteAccountResources(this.model.id);
+		ga.event('Discovery', 'purge').send();
 	}
 
 	get started(): boolean {

@@ -26,15 +26,15 @@
 						<a :class="'dropdown-item ' + (view === 'faq' ? 'active' : '')" href="#" @click.stop.prevent="navigate('faq')">
 							FAQ
 						</a>
-						<a class="dropdown-item" href="https://www.bluematador.com/" target="_blank">
+						<a class="dropdown-item" href="https://www.bluematador.com/" @click="linkTracker('bluematador')" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Blue Matador
 						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" target="_blank">
+						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" @click="linkTracker('github')" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Source (Github)
 						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory/issues" target="_blank">
+						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory/issues" @click="linkTracker('issues')" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Issue Tracker
 						</a>
@@ -64,6 +64,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import Accounts from './components/Accounts.vue';
 import Faq from './components/Faq.vue';
+import ga from '@/lib/google-analytics';
 import Instructions from './components/Instructions.vue';
 import Progress from './components/Progress.vue';
 import Resources from './components/Resources.vue';
@@ -107,8 +108,13 @@ export default class App extends Vue {
 	}
 
 	private navigate(ref: View): void {
+		ga.pageview(window.location.pathname + ref).send();
 		this.dropdown = '';
 		this.view = ref;
+	}
+
+	private linkTracker(name: string): void {
+		ga.event('Link', name).send();
 	}
 }
 </script>
