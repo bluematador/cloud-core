@@ -16,6 +16,7 @@
 		</ol>
 
 		<h3 class="mt-4">Supported AWS Services</h3>
+		<p>More coming soon - under active development</p>
 		<ul>
 			<li v-for="service in awsServices" :key="service">{{service}}</li>
 		</ul>
