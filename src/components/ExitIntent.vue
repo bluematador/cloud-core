@@ -30,6 +30,7 @@ const cookie = 'exit-intent';
 @Component
 export default class ExitIntent extends Vue {
 	private show: boolean = false;
+	private shown: boolean = false;
 	private submitted: boolean = Cookies.get(cookie) === '1';
 
 	mounted(): void {
@@ -84,9 +85,10 @@ export default class ExitIntent extends Vue {
 
 	private mouseout(event: any): void {
 		if (event.toElement == null && event.relatedTarget == null ) {
-			if (!this.submitted && process.env.NODE_ENV === 'production') {
+			if (!this.submitted && !this.shown && process.env.NODE_ENV === 'production') {
 				ga.event('ExitIntent', 'show').send();
 				this.show = true;
+				this.shown = true;
 			}
 		}
 	}
