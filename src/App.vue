@@ -57,17 +57,20 @@
 		<div class="progress-floater d-none d-md-block">
 			<Progress />
 		</div>
+
+		<ExitIntent />
 	</div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
 import Accounts from './components/Accounts.vue';
+import ExitIntent from './components/ExitIntent.vue';
 import Faq from './components/Faq.vue';
 import ga from '@/lib/google-analytics';
 import Instructions from './components/Instructions.vue';
 import Progress from './components/Progress.vue';
 import Resources from './components/Resources.vue';
+import { Component, Vue } from 'vue-property-decorator';
 
 type View = 'accounts' | 'faq' | 'resources' | 'instructions';
 type Dropdown = '' | 'about';
@@ -75,6 +78,7 @@ type Dropdown = '' | 'about';
 @Component({
 	components: {
 		Accounts,
+		ExitIntent,
 		Faq,
 		Instructions,
 		Progress,
@@ -122,6 +126,10 @@ export default class App extends Vue {
 <style lang="scss">
 @import 'bootstrap';
 @import 'fontawesome';
+
+#app {
+	position: relative;
+}
 
 nav .nav-item {
 	margin-right: 20px;
