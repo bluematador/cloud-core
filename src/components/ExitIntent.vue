@@ -19,16 +19,18 @@
 </template>
 
 <script lang="ts">
+import Cookies from 'js-cookie';
 import ga from '@/lib/google-analytics';
 import { Component, Vue } from 'vue-property-decorator';
 
 const formId = '973bffb2-729a-44c8-ab03-5a4d91856daf';
 const portalId = '3917309';
+const cookie = 'exit-intent';
 
 @Component
 export default class ExitIntent extends Vue {
 	private show: boolean = false;
-	private submitted: boolean = false;
+	private submitted: boolean = Cookies.get(cookie) === '1';
 
 	mounted(): void {
 		document.addEventListener('mouseout', this.mouseout);
@@ -62,6 +64,8 @@ export default class ExitIntent extends Vue {
 		if(event.data.type === 'hsFormCallback' && event.data.eventName === 'onFormSubmitted' && event.data.id === formId) {
 			ga.event('ExitIntent', 'submit').send();
 			this.submitted = true;
+			Cookies.set(cookie, '1');
+
 			setTimeout(() => {
 				this.show = false;
 			}, 1000);
@@ -80,7 +84,7 @@ export default class ExitIntent extends Vue {
 
 	private mouseout(event: any): void {
 		if (event.toElement == null && event.relatedTarget == null ) {
-			if (!this.submitted) {
+			if (!this.submitted && process.env.NODE_ENV === 'production') {
 				ga.event('ExitIntent', 'show').send();
 				this.show = true;
 			}
