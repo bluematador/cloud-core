@@ -7,19 +7,29 @@
 
 		<h3 class="mt-4">Instructions</h3>
 
-		<p>To get a real-time snapshot of your AWS costs, do the following:</p>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col col-12 col-lg-6">
 
-		<ol>
-			<li><strong>Connect your AWS accounts</strong> by entering your access and secret key under "Accounts".</li>
-			<li><strong>Your browser will call the APIs</strong> in the background.</li>
-			<li><strong>Browse your resource usage and costs</strong> under "Resources".</li>
-		</ol>
+					<p>To get a real-time snapshot of your AWS costs, do the following:</p>
 
-		<h3 class="mt-4">Supported AWS Services</h3>
-		<p>More coming soon - under active development</p>
-		<ul>
-			<li v-for="service in awsServices" :key="service">{{service}}</li>
-		</ul>
+					<ol>
+						<li><strong>Connect your AWS accounts</strong> by entering your access and secret key under "Accounts".</li>
+						<li><strong>Your browser will call the APIs</strong> in the background.</li>
+						<li><strong>Browse your resource usage and costs</strong> under "Resources".</li>
+					</ol>
+
+					<h3 class="mt-4">Supported AWS Services</h3>
+					<p>More coming soon - under active development</p>
+					<ul>
+						<li v-for="service in awsServices" :key="service">{{service}}</li>
+					</ul>
+				</div>
+				<div class="col col-12 col-lg-6">
+					<iframe width="560" height="315" src="https://www.youtube.com/embed/NHqnZRja7pM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+				</div>
+			</div>
+		</div>
 	</div>
 </template>
 
