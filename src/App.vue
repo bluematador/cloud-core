@@ -66,7 +66,7 @@
 import Accounts from './components/Accounts.vue';
 import ExitIntent from './components/ExitIntent.vue';
 import Faq from './components/Faq.vue';
-import ga from '@/lib/google-analytics';
+import ga, { host as gaHost } from '@/lib/google-analytics';
 import Instructions from './components/Instructions.vue';
 import Progress from './components/Progress.vue';
 import Resources from './components/Resources.vue';
@@ -112,7 +112,7 @@ export default class App extends Vue {
 	}
 
 	private navigate(ref: View): void {
-		ga.pageview(window.location.pathname + ref).send();
+		ga.pageview(window.location.pathname + ref, gaHost).send();
 		this.dropdown = '';
 		this.view = ref;
 	}
