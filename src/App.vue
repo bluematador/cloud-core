@@ -30,11 +30,11 @@
 							<i class="fas fa-external-link-alt"></i>
 							Blue Matador
 						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory" @click="linkTracker('github')" target="_blank">
+						<a class="dropdown-item" href="https://github.com/bluematador/cloud-core" @click="linkTracker('github')" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Source (Github)
 						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/realtime-aws-cost-inventory/issues" @click="linkTracker('issues')" target="_blank">
+						<a class="dropdown-item" href="https://github.com/bluematador/cloud-core/issues" @click="linkTracker('issues')" target="_blank">
 							<i class="fas fa-external-link-alt"></i>
 							Issue Tracker
 						</a>
