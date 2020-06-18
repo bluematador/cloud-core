@@ -20,6 +20,7 @@ export class Account {
 	readonly cloudwatch: Services.CloudWatch;
 	readonly dynamodb: Services.DynamoDB;
 	readonly kinesis: Services.Kinesis;
+	readonly kms: Services.KMS;
 	readonly lambda: Services.Lambda;
 	readonly sns: Services.SNS;
 
@@ -34,6 +35,7 @@ export class Account {
 		this.cloudwatch = new Services.CloudWatch(this);
 		this.dynamodb = new Services.DynamoDB(this);
 		this.kinesis = new Services.Kinesis(this);
+		this.kms = new Services.KMS(this);
 		this.lambda = new Services.Lambda(this);
 		this.sns = new Services.SNS(this);
 
@@ -42,6 +44,7 @@ export class Account {
 			this.cloudwatch,
 			this.dynamodb,
 			this.kinesis,
+			this.kms,
 			this.lambda,
 			this.sns,
 		];

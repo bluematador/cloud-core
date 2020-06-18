@@ -86,6 +86,10 @@ const mod = defineModule({
 		updateResource(state, payload: UpdatePayload): void {
 			const resource = state.all.find(r => r.id === payload.id);
 			if (resource !== undefined) {
+				if ('name' in payload) {
+					Vue.set(resource, 'name', payload.name);
+				}
+
 				if ('error' in payload) {
 					Vue.set(resource, 'error', payload.error);
 				}
@@ -127,6 +131,7 @@ const modActionContext = (context: any) => moduleActionContext(context, mod)
 
 interface UpdatePayload {
 	id: string
+	name?: string
 	error?: any
 	details?: {[key: string]: Detail}
 	tags?: {[key: string]: string}

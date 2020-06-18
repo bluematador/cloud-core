@@ -38,6 +38,10 @@ export abstract class RegionWorker {
 		return 'aws';
 	}
 
+	protected fakeArn(service: string, name: string): string {
+		return 'arn:' + this.partition + ':' + service + ':' + this.region + ':' + this.account.model.cloudId + ':FAKE/' + name;
+	}
+
 	protected get cloudwatch(): CloudWatchWorker {
 		return this.account.cloudwatch.regions[this.region];
 	}
@@ -206,10 +210,6 @@ export abstract class RegionWorker {
 		const usage = items.map(i => Number(i) * seconds / 3600).sum();
 		const subtotal = items.map(i => levels[i] * seconds / 3600).sum();
 
-		if (items.length > 0) {
-			console.log(items, levels, seconds, unit, usage, subtotal, subtotal * 3600 / seconds);
-		}
-
 		return {
 			usage,
 			unit,
@@ -217,6 +217,51 @@ export abstract class RegionWorker {
 			subtotal,
 			subtotal1h: subtotal * 3600 / seconds,
 		};
+	}
+
+	private nameToCloudwatchId(name: string): string {
+		return name.toLowerCase().replace(/\-/g, '');
+	}
+
+	protected inspectSimpleApiUsage(arn: string, serviceName: string, apis: string[], simpleRateMapping: {[key: string]: string}, defaultRate: string): void {
+		const calls = this.cloudwatch.summarizeMetrics(apis.map(api => {
+			return {
+				id: this.nameToCloudwatchId(api),
+				metric: 'CallCount',
+				namespace: 'AWS/Usage',
+				stat: 'Sum',
+				unit: 'None',
+				dimensions: {
+					'Resource': api,
+					'Service': serviceName,
+					'Type': 'API',
+					'Class': 'None',
+				},
+			};
+		}));
+
+		Promise.all([calls, this.pricing]).then(([calls, prices]) => {
+			const calculations = this.calculationsForResource((key, seconds) => {
+				return Object.fromEntries(apis.map(api => {
+					return [
+						api,
+						this.simpleCalc(
+							calls.metrics[this.nameToCloudwatchId(api)][key].sum, /* # calls */
+							prices.simple[(api in simpleRateMapping) ? simpleRateMapping[api] : defaultRate], /* Rate per call */
+							seconds
+						),
+					];
+				}));
+			});
+
+			this.addResource({
+				id: arn,
+				name: 'API Usage',
+				kind: 'API Usage',
+				url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~();query=~'*7bAWS*2fUsage*2cClass*2cResource*2cService*2cType*7d*20" + encodeURIComponent(serviceName),
+				calculations,
+			});
+		});
 	}
 
 	protected addResource(resource: ResourceDescriptor): void {

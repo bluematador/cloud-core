@@ -4,6 +4,7 @@ export {};
 
 declare global {
 	interface Array<T> {
+		chunks(size: number): T[][];
 		count(fn: (_1: T) => boolean): number;
 		copy(): T[];
 		distinct(): T[];
@@ -48,6 +49,18 @@ if (!Array.prototype.shuffle) {
 		const copy = [...this];
 		shuffle(copy);
 		return copy;
+	}
+}
+
+/*==============*/
+/* Array.chunks */
+/*==============*/
+
+if (!Array.prototype.chunks) {
+	Array.prototype.chunks = function<T>(this: T[], size: number): T[][] {
+		return Array(Math.ceil(this.length / size)).fill(0).map((_, index) => {
+			return this.slice(index * size, (index + 1) * size);
+		});
 	}
 }
 

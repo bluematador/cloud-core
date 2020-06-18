@@ -118,17 +118,13 @@ export class CloudWatchWorker extends RegionWorker {
 		});
 	}
 
-	fakeArn(name: string): string {
-		return 'arn:' + this.partition + ':cloudwatch:' + this.region + ':' + this.account.model.cloudId + ':FAKE/' + name;
-	}
-
 	updatedCredentials(credentials: AWS.Credentials): void {
 		this.api.config.update({
 			credentials: credentials,
 		});
 	}
 
-	getMetrics(metrics: MetricsRequest): Promise<MetricsResponse> {
+	private getMetrics(metrics: MetricsRequest): Promise<MetricsResponse> {
 		const period = 300;
 		const periodMs = period * 1000;
 		const durationMs = 604800000; // 1 week
@@ -221,21 +217,40 @@ export class CloudWatchWorker extends RegionWorker {
 			};
 		}
 
-		return this.getMetrics(metrics).then(result => {
+		// cloudwatch can only handle so many metrics and data points per api
+		const chunks = metrics.chunks(50).map(chunk => {
+			return this.getMetrics(chunk).then(result => {
+				const formatted: MetricSummaryResponse = {
+					period: result.period,
+					metrics: {},
+				};
+
+				for (const id in result.metrics) {
+					const values = result.metrics[id];
+					const reversed = [...values].reverse();
+
+					formatted.metrics[id] = {
+						last: summarize(reversed.slice(0, 1)),
+						avg1h: summarize(reversed.slice(0,   3600 / result.period)),
+						avg1d: summarize(reversed.slice(0,  86400 / result.period)),
+						avg1w: summarize(reversed.slice(0, 604800 / result.period)),
+					};
+				}
+
+				return formatted;
+			});
+		});
+
+		return Promise.all(chunks).then(chunks => {
 			const formatted: MetricSummaryResponse = {
-				period: result.period,
+				period: chunks[0].period,
 				metrics: {},
 			};
 
-			for (const id in result.metrics) {
-				const values = result.metrics[id];
-				const reversed = [...values].reverse();
-
-				formatted.metrics[id] = {
-					last: summarize(reversed.slice(0, 1)),
-					avg1h: summarize(reversed.slice(0,   3600 / result.period)),
-					avg1d: summarize(reversed.slice(0,  86400 / result.period)),
-					avg1w: summarize(reversed.slice(0, 604800 / result.period)),
+			for (const one of chunks) {
+				formatted.metrics = {
+					...one.metrics,
+					...formatted.metrics,
 				};
 			}
 
@@ -363,73 +378,30 @@ export class CloudWatchWorker extends RegionWorker {
 	}
 
 	private inspectApiUsage(): void {
-		// this item doesn't have an arn, so we'll make one up.
-		const arn = this.fakeArn('apiusage');
-
-		const apis = [
-			'GetMetricData',
-			'GetInsightRuleReport',
-			'GetMetricWidgetImage',
-			'GetMetricStatistics',
-			'ListMetrics',
-			'PutMetricData',
-			'GetDashboard',
-			'ListDashboards',
-			'PutDashboard',
-			'DeleteDashboards',
-		];
-
-		const rates: {[key: string]: string} = {
-			'GetMetricData': 'api.metricdata',
-			'GetInsightRuleReport': 'api.insight',
-			'GetMetricWidgetImage': 'api.metricwidget',
-		};
-
-		const calls = this.summarizeMetrics(apis.map(api => {
-			return {
-				id: api.toLowerCase(),
-				metric: 'CallCount',
-				namespace: 'AWS/Usage',
-				stat: 'Sum',
-				unit: 'None',
-				dimensions: {
-					'Resource': api,
-					'Service': 'CloudWatch',
-					'Type': 'API',
-					'Class': 'None',
-				},
-			};
-		}));
-
-		Promise.all([calls, this.pricing]).then(([calls, prices]) => {
-			const calculations = this.calculationsForResource((key, seconds) => {
-				return Object.fromEntries(apis.map(api => {
-					return [
-						api,
-						this.simpleCalc(
-							calls.metrics[api.toLowerCase()][key].sum, /* # calls */
-							prices.simple[(api in rates) ? rates[api] : 'api.default'], /* Rate per call */
-							seconds
-						),
-					];
-				}));
-			});
-
-			this.addResource({
-				id: arn,
-				name: 'API Usage',
-				kind: 'API Usage',
-				url: "https://console.aws.amazon.com/cloudwatch/home?region=" + this.region + "#metricsV2:graph=~();query=~'*7bAWS*2fUsage*2cClass*2cResource*2cService*2cType*7d*20Cloudwatch",
-				calculations,
-			});
-		}).catch(e => {
-			this.updateResourceError(arn, e);
-		});
+		const arn = this.fakeArn('cloudwatch', 'apiusage');
+		return this.inspectSimpleApiUsage(arn, 'CloudWatch', [
+				'GetMetricData',
+				'GetInsightRuleReport',
+				'GetMetricWidgetImage',
+				'GetMetricStatistics',
+				'ListMetrics',
+				'PutMetricData',
+				'GetDashboard',
+				'ListDashboards',
+				'PutDashboard',
+				'DeleteDashboards',
+			], {
+				'GetMetricData': 'api.metricdata',
+				'GetInsightRuleReport': 'api.insight',
+				'GetMetricWidgetImage': 'api.metricwidget',
+			},
+			'api.default'
+		);
 	}
 
 	private inspectCustomMetricUsage(): void {
 		// this item doesn't have an arn, so we'll make one up.
-		const arn = this.fakeArn('metrics');
+		const arn = this.fakeArn('cloudwatch', 'metrics');
 
 		const countMetrics = this.enqueuePagedRequestFold(20, this.api.listMetrics(), 0, (data, fold) => {
 			const count = data.Metrics ? data.Metrics.count(m => !(m.Namespace || '').startsWith('AWS/')) : 0;
