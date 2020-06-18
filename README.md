@@ -1,46 +1,39 @@
 # Cloud CORE
 
-Tracking cloud inventory and costs in realtime isn't possible with any major cloud provider. There are a number of reasons for this.
+This Cost Optimization Resource Explorer helps you see realtime, resource-specific costs in your AWS accounts.
 
-* Your usage is elastic, including bandwidth, function invocations, IOPS, and more.
-* Your credentials are widely distributed. Anyone can launch more resources at the drop of a hat.
-* Your cloud footprint can easily extend beyond a single account at a single IaaS provider.
+## Live Version
 
-The major cloud providers provide tooling to get billing forecasts and historical costs, but they always fall short of providing helpful information on pinpointing waste and reducing your bill. They don't support multiple accounts and definitely don't dive into resource-specific usage.
+A live version of the master branch is available [here](https://tools.bluematador.com/cloud-core/).
 
-So, we built this tool.
+## Run it Yourself
 
-## Why "Cloud CORE"?
+To run Cloud CORE yourself:
 
-CORE is an acronym. The full name is "Cloud Cost Optimization Resource Explorer".
+1. Clone the repo
+1. Build the project with `npm run build`
+1. Start an http server in `dist`. I like [http-server](https://github.com/http-party/http-server).
 
-## What does it do?
+## Security
 
-It's a simple webpage that will query AWS for all your resources and usage, across all services and all regions, using IAM credentials supplied by you. Once the results are in, you can:
+Here's how Cloud CORE handles security of sensitive AWS information:
 
-* Find the most costly resources in your account.
-* Track inventory between regions and services.
-* Project monthly costs based on instantaneous usage.
-* Drill into specific resources and associated costs.
+* Your credentials are never transmitted anywhere. The API calls only require a signature, so the credentials aren't even sent to AWS.
+* If you choose to store your credentials, they are encrypted using 256bit AES encryption with 1000 iterations.
+* The encryption key is never stored or transmitted. Only you know the key.
+* Your resource data is never stored or transmitted.
 
-Overall, it's a great way to see what the cloud providers don't want you to see - how to reduce your cloud spend.
+If you opt to use the [live version](https://tools.bluematador.com/cloud-core/)
 
-## What does it not do?
+* The live version is served over TLS.
+* The live version is hosted and served using S3 and Cloudfront. There is no backend server to store information on.
 
-This tool is not a replacement for the cost explorer and bill forecasting tools from the cloud providers. As such, **it does not**:
+## How does it work?
 
-* Track usage between refreshes.
-* Make API calls on any sort of cronjob or frequency.
-* Send notifications.
-* Make any changes in your account or read sensitive or proprietary data.
+Cloud CORE is a single page webapp that collects your credentials and makes API requests to AWS in your browser.
+Your resources are then displayed in a filterable, sortable table of results. The cost of each resource is displayed with the results.
 
-## How do I use it?
-
-You can access the current master build [here](https://tools.bluematador.com/cloud-core/).
-
-To run it yourself, look at the [development instructions](DEVELOPING.md).
-
-In the meantime, consider [contributing](CONTRIBUTING.md).
+[![Cloud CORE Introduction](https://img.youtube.com/vi/NHqnZRja7pM/0.jpg)](https://www.youtube.com/watch?v=NHqnZRja7pM)
 
 ## License
 
