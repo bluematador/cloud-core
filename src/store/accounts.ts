@@ -16,7 +16,6 @@ export interface Account {
 	name: string
 	access: string
 	secret: string
-	enabled: boolean
 	cloudId?: string
 	error?: string
 }

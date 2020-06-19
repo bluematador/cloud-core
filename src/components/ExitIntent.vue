@@ -19,8 +19,8 @@
 </template>
 
 <script lang="ts">
+import Analytics from '@/lib/google-analytics';
 import Cookies from 'js-cookie';
-import ga from '@/lib/google-analytics';
 import { Component, Vue } from 'vue-property-decorator';
 
 const formId = '973bffb2-729a-44c8-ab03-5a4d91856daf';
@@ -63,7 +63,7 @@ export default class ExitIntent extends Vue {
 	private hubspotFormCallbacks(event: any): void {
 		// https://developers.hubspot.com/global-form-events
 		if(event.data.type === 'hsFormCallback' && event.data.eventName === 'onFormSubmitted' && event.data.id === formId) {
-			ga.event('ExitIntent', 'submit').send();
+			Analytics.event('exit-intent', 'submit');
 			this.submitted = true;
 			Cookies.set(cookie, '1');
 
@@ -79,14 +79,14 @@ export default class ExitIntent extends Vue {
 	}
 
 	close(): void {
-		ga.event('ExitIntent', 'close').send();
+		Analytics.event('exit-intent', 'close');
 		this.show = false;
 	}
 
 	private mouseout(event: any): void {
 		if (event.toElement == null && event.relatedTarget == null ) {
 			if (!this.submitted && !this.shown && process.env.NODE_ENV === 'production') {
-				ga.event('ExitIntent', 'show').send();
+				Analytics.event('exit-intent', 'show');
 				this.show = true;
 				this.shown = true;
 			}

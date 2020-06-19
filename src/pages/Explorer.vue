@@ -1,23 +1,36 @@
 <template>
 	<div>
-		<h1 class="p-2">Resources</h1>
-
-		<div class="text-right p-3">
-			<span class="mr-3">Found {{resources.length}} Resources</span>
-			<span class="mr-1">Page Size:</span>
-			<div class="d-inline-block">
-				<div class="btn-group">
-					<button v-for="n in pageSizeOptions" :key="n"
-							:disabled="pageSize === n"
-							@click="changePageSize(n)"
-							class="btn btn-primary">{{n}}</button>
-				</div>
-			</div>
-		</div>
+		<h1 class="p-2">Explorer</h1>
 
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
+					<div class="accordion mb-3">
+						<CollapsingCard header="Accounts" :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
+							<div>
+								<button v-for="account in accounts" :key="account.id"
+										class="filter-option text-truncate mr-1 mb-1 btn"
+										:class="{
+											'btn-primary': !disabledAccounts[account.id],
+											'btn-light': disabledAccounts[account.id],
+											'btn-danger': account.error !== undefined,
+										}"
+										@click="toggleAccount(account.id)">{{account.name}}</button>
+							</div>
+							<hr />
+							<div class="text-center mt-3">
+								<button class="btn btn-secondary" @click="manageAccounts()">
+									<i class="fab fa-aws"></i>
+									Manage Accounts
+								</button>
+
+								<div v-if="accounts.some(a => a.error !== undefined)" class="mt-3 alert alert-danger">
+									Some of your accounts have invalid credentials.
+								</div>
+							</div>
+						</CollapsingCard>
+					</div>
+
 					<div class="accordion mb-3">
 						<CollapsingCard header="Cost Calculations">
 							<div class="text-center">
@@ -43,30 +56,41 @@
 					</div>
 
 					<div class="accordion mb-3">
-						<CollapsingCard header="Accounts" collapsed :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
-							<button v-for="account in accounts" :key="account.id"
-									class="filter-option text-truncate mr-1 mb-1 btn"
-									:class="{'btn-primary': !disabledAccounts[account.id], 'btn-light': disabledAccounts[account.id]}"
-									@click="toggleAccount(account.id)">{{account.name}}</button>
-						</CollapsingCard>
-						<CollapsingCard header="Services" collapsed :badge="'' + (services.length - Object.keys(disabledServices).length)">
+						<CollapsingCard header="Services" :badge="`${services.length - Object.keys(disabledServices).length} / ${services.length}`">
 							<button v-for="service in services" :key="service"
 									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
 									@click="toggleService(service)">{{service}}</button>
 						</CollapsingCard>
-						<CollapsingCard header="Resource Types" collapsed :badge="'' + (kinds.length - Object.keys(disabledKinds).length)">
+						<CollapsingCard header="Resource Types" :badge="`${kinds.length - Object.keys(disabledKinds).length} / ${kinds.length}`">
 							<button v-for="kind in kinds" :key="kind"
 									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledKinds[kind], 'btn-light': disabledKinds[kind]}"
 									@click="toggleKind(kind)">{{kind}}</button>
 						</CollapsingCard>
-						<CollapsingCard header="Regions" collapsed :badge="'' + (regions.length - Object.keys(disabledRegions).length)">
+						<CollapsingCard header="Regions" :badge="`${regions.length - Object.keys(disabledRegions).length} / ${regions.length}`">
 							<button v-for="region in regions" :key="region"
 									class="filter-option text-truncate mr-1 mb-1 btn"
 									:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
 									@click="toggleRegion(region)">{{region}}</button>
 						</CollapsingCard>
+					</div>
+
+					<div class="accordion mb-3">
+						<CollapsingCard header="Options" collapsed>
+							<div class="d-inline-block w-50">Page Size:</div>
+							<div class="d-inline-block w-50">
+								<div class="btn-group">
+									<button v-for="n in pageSizeOptions" :key="n"
+											:disabled="pageSize === n"
+											@click="changePageSize(n)"
+											class="btn btn-primary">{{n}}</button>
+								</div>
+							</div>
+						</CollapsingCard>
+					</div>
+
+					<div class="text-right p-3">
 					</div>
 				</div>
 				<div class="col col-8 col-xl-9">
@@ -135,8 +159,8 @@
 					</table>
 
 					<div class="mt-3 mb-3 text-center">
-						<h2 v-if="pagedResources.length === 0">No Resources Found</h2>
-						<Pages v-else :page="page" :total="pageCount" @page="changePage" />
+						<h3>{{resources.length}} Resources</h3>
+						<Pages v-if="resources.length > 0" :page="page" :total="pageCount" @page="changePage" />
 					</div>
 				</div>
 			</div>
@@ -146,11 +170,11 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { Account } from '../store/accounts';
-import { Resource } from '../store/resources';
-import CollapsingCard from './CollapsingCard.vue';
-import ga from '@/lib/google-analytics';
-import Pages from './Pages.vue';
+import { Account } from '@/store/accounts';
+import { Resource } from '@/store/resources';
+import Analytics from '@/lib/google-analytics';
+import CollapsingCard from '@/components/CollapsingCard.vue';
+import Pages from '@/components/Pages.vue';
 
 type SortOptions = 'account'|'service'|'kind'|'region'|'name'|'forecast';
 type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w'
@@ -161,7 +185,7 @@ type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w'
 		Pages,
 	},
 })
-export default class Resources extends Vue {
+export default class Explorer extends Vue {
 	costFormat = new Intl.NumberFormat(undefined, {
 		style: 'currency',
 		currency: 'USD',
@@ -193,6 +217,12 @@ export default class Resources extends Vue {
 	disabledServices: {[id: string]: string} = {};
 	disabledKinds: {[id: string]: string} = {};
 	disabledRegions: {[id: string]: string} = {};
+
+	beforeMount(): void {
+		if (!this.$store.direct.state.accounts.decrypted || this.$store.direct.state.accounts.all.length === 0) {
+			this.$router.push('/');
+		}
+	}
 
 	get resources() {
 		const filtered = this.$store.direct.state.resources.all.filter(r => {
@@ -276,39 +306,39 @@ export default class Resources extends Vue {
 	}
 
 	toggleAccount(id: string) {
-		ga.event('Resources', 'filter-account').send();
+		Analytics.event('explorer', 'filter-account');
 		this.toggle(id, this.disabledAccounts);
 	}
 
 	toggleService(id: string) {
-		ga.event('Resources', 'filter-service').send();
+		Analytics.event('explorer', 'filter-service');
 		this.toggle(id, this.disabledServices);
 	}
 
 	toggleKind(id: string) {
-		ga.event('Resources', 'filter-kind').send();
+		Analytics.event('explorer', 'filter-kind');
 		this.toggle(id, this.disabledKinds);
 	}
 
 	toggleRegion(id: string) {
-		ga.event('Resources', 'filter-region').send();
+		Analytics.event('explorer', 'filter-region');
 		this.toggle(id, this.disabledRegions);
 	}
 
 	changePage(newPage: number) {
-		ga.event('Resources', 'switch-page').send();
+		Analytics.event('explorer', 'switch-page');
 		this.page = newPage;
 		window.scrollTo(0, 0);
 	}
 
 	changePageSize(size: number) {
-		ga.event('Resources', 'page-size').send();
+		Analytics.event('explorer', 'page-size');
 		this.page = 0;
 		this.pageSize = size;
 	}
 
 	changeSort(id: SortOptions) {
-		ga.event('Resources', 'sort-' + id).send();
+		Analytics.event('explorer', 'sort-' + id);
 		if (id === this.sort) {
 			this.sortAsc = !this.sortAsc;
 		}
@@ -318,8 +348,12 @@ export default class Resources extends Vue {
 		}
 	}
 
+	manageAccounts(): void {
+		this.$router.push('/accounts');
+	}
+
 	linkTrack(resource: Resource) {
-		ga.event('Resources', 'link', [resource.region, resource.service].join(' ')).send();
+		Analytics.event('explorer', 'link-' + [resource.region, resource.service].join('-'));
 	}
 }
 </script>

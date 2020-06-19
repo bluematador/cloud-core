@@ -1,6 +1,6 @@
 <template>
 	<div v-if="show">
-		<CollapsingCard header="Discovery Progress" :badge="done ? 'DONE' : undefined">
+		<CollapsingCard header="Discovery Progress" :collapsed="allDone || total === 0" :badge="allDone ? 'DONE' : undefined">
 			<div class="container-fluid">
 				<div class="row">
 					<div class="col">
@@ -12,7 +12,8 @@
 				</div>
 				<div class="row">
 					<div class="col">
-						Errors:
+						Bad Responses:
+						<i class="fas fa-question-circle" title="A majority of these are AWS services, partitions, and regions that you haven't subscribed to yet. Some of them may be rate limiting or permission errors."></i>
 					</div>
 					<div class="col text-right">
 						<strong>{{errors}}</strong>
@@ -55,7 +56,7 @@ export default class Progress extends Vue {
 	}
 
 	get allDone(): boolean {
-		return this.done === this.total;
+		return this.done > 0 && this.done === this.total;
 	}
 
 	get percentDone(): number {

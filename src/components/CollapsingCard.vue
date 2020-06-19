@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Watch, Vue } from 'vue-property-decorator';
 
 @Component
 export default class CollapsingCard extends Vue {
@@ -33,6 +33,11 @@ export default class CollapsingCard extends Vue {
 
 	toggle(): void {
 		this.show = !this.show;
+	}
+
+	@Watch('collapsed')
+	collapseChanged(value: string, oldValue: string) {
+		this.show = !value;
 	}
 }
 </script>

@@ -1,53 +1,33 @@
 <template>
 	<div id="app">
 		<nav class="navbar navbar-expand navbar-dark bg-dark">
-			<div class="navbar-brand mr-5">
-				<span title="Cloud Cost Optimization Resource Explorer">Cloud CORE</span>
-			</div>
+			<router-link to="/explorer" class="navbar-brand mr-5" title="Cloud Cost Optimization Resource Explorer">Cloud CORE</router-link>
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item">
+					<router-link to="/explorer" class="nav-link">Explorer</router-link>
+				</li>
+				<li class="nav-item">
+					<router-link to="/about" class="nav-link">About</router-link>
+				</li>
+			</ul>
 			<ul class="navbar-nav">
 				<li class="nav-item">
-					<a href="#" @click.stop.prevent="navigate('accounts')" :class="{'nav-link': true, 'active': view === 'accounts'}">
-						Accounts
+					<a class="nav-link" href="https://www.bluematador.com/" @click="linkTracker('bluematador')" target="_blank">
+						<i class="fas fa-external-link-alt"></i>
+						Blue Matador
 					</a>
 				</li>
 				<li class="nav-item">
-					<a href="#" @click.stop.prevent="navigate('resources')" :class="{'nav-link': true, 'active': view === 'resources'}">
-						Resources
+					<a class="nav-link" href="https://github.com/bluematador/cloud-core" @click="linkTracker('github')" target="_blank">
+						<i class="fab fa-github"></i>
+						Github
 					</a>
-				</li>
-				<li class="nav-item dropdown">
-					<a href="#" @click.stop.prevent="drop('about')" :class="'nav-link dropdown-toggle ' + (['faq', 'instructions'].includes(view) ? 'active' : '')">
-						About
-					</a>
-					<div :class="'dropdown-menu '  + (dropdown === 'about' ? 'show' : '')">
-						<a :class="'dropdown-item ' + (view === 'instructions' ? 'active' : '')" href="#" @click.stop.prevent="navigate('instructions')">
-							Instructions
-						</a>
-						<a :class="'dropdown-item ' + (view === 'faq' ? 'active' : '')" href="#" @click.stop.prevent="navigate('faq')">
-							FAQ
-						</a>
-						<a class="dropdown-item" href="https://www.bluematador.com/" @click="linkTracker('bluematador')" target="_blank">
-							<i class="fas fa-external-link-alt"></i>
-							Blue Matador
-						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/cloud-core" @click="linkTracker('github')" target="_blank">
-							<i class="fas fa-external-link-alt"></i>
-							Source (Github)
-						</a>
-						<a class="dropdown-item" href="https://github.com/bluematador/cloud-core/issues" @click="linkTracker('issues')" target="_blank">
-							<i class="fas fa-external-link-alt"></i>
-							Issue Tracker
-						</a>
-					</div>
 				</li>
 			</ul>
 		</nav>
 
-		<div class="main pb-5">
-			<Instructions v-if="view === 'instructions'" />
-			<Faq v-if="view === 'faq'" />
-			<Accounts v-if="view === 'accounts'" />
-			<Resources v-if="view === 'resources'" />
+		<div class="router-view">
+			<router-view></router-view>
 		</div>
 
 		<footer class="text-center text-light p-3 bg-dark">
@@ -63,62 +43,24 @@
 </template>
 
 <script lang="ts">
-import Accounts from './components/Accounts.vue';
-import ExitIntent from './components/ExitIntent.vue';
-import Faq from './components/Faq.vue';
-import ga, { host as gaHost } from '@/lib/google-analytics';
-import Instructions from './components/Instructions.vue';
-import Progress from './components/Progress.vue';
-import Resources from './components/Resources.vue';
 import { Component, Vue } from 'vue-property-decorator';
-
-type View = 'accounts' | 'faq' | 'resources' | 'instructions';
-type Dropdown = '' | 'about';
+import Analytics from '@/lib/google-analytics';
+import ExitIntent from './components/ExitIntent.vue';
+import Progress from './components/Progress.vue';
 
 @Component({
 	components: {
-		Accounts,
 		ExitIntent,
-		Faq,
-		Instructions,
 		Progress,
-		Resources,
 	},
 })
 export default class App extends Vue {
-	private view: View = 'instructions';
-	private dropdown: Dropdown = '';
-
 	mounted(): void {
-		document.addEventListener('click', this.rootClicked);
-
-		if (!this.$store.direct.state.accounts.decrypted) {
-			this.view = 'accounts';
-		}
-	}
-
-	beforeDestroy(): void {
-		document.removeEventListener('click', this.rootClicked);
-	}
-
-	private rootClicked(): void {
-		if (this.dropdown) {
-			this.dropdown = '';
-		}
-	}
-
-	private drop(ref: Dropdown): void {
-		this.dropdown = ref;
-	}
-
-	private navigate(ref: View): void {
-		ga.pageview(window.location.pathname + ref, gaHost).send();
-		this.dropdown = '';
-		this.view = ref;
+		this.$router.push('/');
 	}
 
 	private linkTracker(name: string): void {
-		ga.event('Link', name).send();
+		Analytics.event('link', name);
 	}
 }
 </script>
@@ -134,7 +76,8 @@ export default class App extends Vue {
 nav .nav-item {
 	margin-right: 20px;
 }
-.main {
+
+.router-view {
 	min-height: calc(100vh - 56px - 56px);
 }
 
@@ -144,7 +87,7 @@ button i {
 
 .progress-floater {
 	position: fixed;
-	left: 10px; bottom: 3px;
-	width: 300px;
+	right: 3px; top: 59px;
+	width: 400px;
 }
 </style>

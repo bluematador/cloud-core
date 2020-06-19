@@ -33,7 +33,7 @@ If you opt to use the [live version](https://tools.bluematador.com/cloud-core/)
 Cloud CORE is a single page webapp that collects your credentials and makes API requests to AWS in your browser.
 Your resources are then displayed in a filterable, sortable table of results. The cost of each resource is displayed with the results.
 
-[![Cloud CORE Introduction](https://img.youtube.com/vi/NHqnZRja7pM/0.jpg)](https://www.youtube.com/watch?v=NHqnZRja7pM)
+[![Cloud CORE Introduction](https://img.youtube.com/vi/Gfw6kMlHouA/0.jpg)](https://www.youtube.com/watch?v=Gfw6kMlHouA)
 
 ## License
 
