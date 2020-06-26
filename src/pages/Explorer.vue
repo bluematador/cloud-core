@@ -32,27 +32,7 @@
 					</div>
 
 					<div class="accordion mb-3">
-						<CollapsingCard header="Cost Calculations">
-							<div class="text-center">
-								<div>Extrapolate costs from the last:</div>
-								<div class="btn-group">
-									<button v-for="(name, key) in costIndexes" :key="key"
-											:disabled="costIndex === key"
-											@click="costIndex = key"
-											class="btn btn-primary">{{name}}</button>
-								</div>
-								<div class="mt-3 mb-3">
-									<span style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 5px; font-size: 0.75rem;">and then</span>
-								</div>
-								<div>Forecast costs for:</div>
-								<div class="btn-group">
-									<button v-for="(name, seconds) in forecasts" :key="name"
-											:disabled="forecast === Number(seconds)"
-											@click="forecast = Number(seconds)"
-											class="btn btn-primary">{{name}}</button>
-								</div>
-							</div>
-						</CollapsingCard>
+						<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
 					</div>
 
 					<div class="accordion mb-3">
@@ -174,14 +154,16 @@ import { Account } from '@/store/accounts';
 import { Resource } from '@/store/resources';
 import Analytics from '@/lib/google-analytics';
 import CollapsingCard from '@/components/CollapsingCard.vue';
+import CostCalculations from '@/components/CostCalculations.vue';
 import Pages from '@/components/Pages.vue';
 
 type SortOptions = 'account'|'service'|'kind'|'region'|'name'|'forecast';
-type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w'
+type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w';
 
 @Component({
 	components: {
 		CollapsingCard,
+		CostCalculations,
 		Pages,
 	},
 })
@@ -199,19 +181,7 @@ export default class Explorer extends Vue {
 	sortAsc: boolean = false;
 
 	costIndex: CostOptions = 'avg1d';
-	costIndexes = {
-		'last': 'Value',
-		'avg1h': 'Hour',
-		'avg1d': 'Day',
-		'avg1w': 'Week',
-	};
-
-	forecast = 720;
-	forecasts = {
-		'1': '1 Hour',
-		'24': '1 Day',
-		'720': '30 Days',
-	};
+	forecast: number = 720;
 
 	disabledAccounts: {[id: string]: string} = {};
 	disabledServices: {[id: string]: string} = {};
@@ -222,6 +192,16 @@ export default class Explorer extends Vue {
 		if (!this.$store.direct.state.accounts.decrypted || this.$store.direct.state.accounts.all.length === 0) {
 			this.$router.push('/');
 		}
+	}
+
+	setCostIndex(value: CostOptions): void {
+		Analytics.event('explorer', 'cost-index-' + value);
+		this.costIndex = value;
+	}
+
+	setForecast(value: number): void {
+		Analytics.event('explorer', 'forecast-' + value);
+		this.forecast = value;
 	}
 
 	get resources() {
