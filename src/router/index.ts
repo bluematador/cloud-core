@@ -2,9 +2,10 @@ import About from '@/pages/About.vue';
 import AccountForm from '@/pages/AccountForm.vue';
 import Accounts from '@/pages/Accounts.vue';
 import Analytics from '@/lib/google-analytics';
-import Onboarding from '@/pages/Onboarding.vue';
+import Breakdown from '@/pages/Breakdown.vue';
 import EncryptionForm from '@/pages/EncryptionForm.vue';
 import Explorer from '@/pages/Explorer.vue';
+import Onboarding from '@/pages/Onboarding.vue';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 
@@ -20,6 +21,9 @@ const router = new VueRouter({
 	}, {
 		path: '/explorer',
 		component: Explorer,
+	}, {
+		path: '/breakdown',
+		component: Breakdown,
 	}, {
 		path: '/encrypt',
 		component: EncryptionForm,

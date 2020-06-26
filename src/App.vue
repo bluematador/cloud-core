@@ -7,6 +7,9 @@
 					<router-link to="/explorer" class="nav-link">Explorer</router-link>
 				</li>
 				<li class="nav-item">
+					<router-link to="/breakdown" class="nav-link">Breakdown</router-link>
+				</li>
+				<li class="nav-item">
 					<router-link to="/about" class="nav-link">About</router-link>
 				</li>
 			</ul>
@@ -66,8 +69,7 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss">
-@import 'bootstrap';
-@import 'fontawesome';
+@import 'app';
 
 #app {
 	position: relative;
@@ -79,10 +81,6 @@ nav .nav-item {
 
 .router-view {
 	min-height: calc(100vh - 56px - 56px);
-}
-
-button i {
-	margin-right: 8px;
 }
 
 .progress-floater {

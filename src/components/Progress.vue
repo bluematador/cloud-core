@@ -66,7 +66,7 @@ export default class Progress extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '../bootstrap';
+@import '../variables';
 
 .card {
 	border: 1px solid $dark;
