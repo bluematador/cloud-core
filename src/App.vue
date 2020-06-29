@@ -84,7 +84,7 @@ nav .nav-item {
 }
 
 .progress-floater {
-	position: fixed;
+	position: absolute;
 	right: 3px; top: 59px;
 	width: 400px;
 }
