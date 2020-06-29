@@ -13,3 +13,9 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 button i {
 	margin-right: 8px;
 }
+
+.sticky {
+	top: 20px;
+	position: sticky;
+	z-index: 100;
+}

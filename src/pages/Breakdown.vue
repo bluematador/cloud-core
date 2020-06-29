@@ -5,8 +5,10 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<div class="accordion mb-3">
-						<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
+					<div class="sticky">
+						<div class="accordion mb-3">
+							<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
+						</div>
 					</div>
 				</div>
 
@@ -18,21 +20,23 @@
 						</div>
 					</div>
 					<div v-else>
-						<div class="bread">
-							<div v-for="(filter, index) in filters" :key="filter.key" class="bread-group">
-								<div class="bread-sep" v-if="index > 0">
-									<i class="fas fa-angle-right"></i>
-								</div>
-								<div class="bread-item">
-									<div class="name">
-										<span v-if="index === (filters.length - 1)">{{filter.label}}</span>
-										<a v-else href="#" @click.prevent="removeFiltersAfter(index)">{{filter.label}}</a>
+						<div class="sticky">
+							<div class="bread">
+								<div v-for="(filter, index) in filters" :key="filter.key" class="bread-group">
+									<div class="bread-sep" v-if="index > 0">
+										<i class="fas fa-angle-right"></i>
 									</div>
-									<div class="cost">
-										{{costFormat.format(costForFilter(index))}}
-									</div>
-									<div class="percent">
-										{{percentFormat.format(percentForFilter(index))}}
+									<div class="bread-item">
+										<div class="name">
+											<span v-if="index === (filters.length - 1)">{{filter.label}}</span>
+											<a v-else href="#" @click.prevent="removeFiltersAfter(index)">{{filter.label}}</a>
+										</div>
+										<div class="cost">
+											{{costFormat.format(costForFilter(index))}}
+										</div>
+										<div class="percent">
+											{{percentFormat.format(percentForFilter(index))}}
+										</div>
 									</div>
 								</div>
 							</div>

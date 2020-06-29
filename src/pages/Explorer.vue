@@ -5,72 +5,71 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<div class="accordion mb-3">
-						<CollapsingCard header="Accounts" :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
-							<div>
-								<button v-for="account in accounts" :key="account.id"
+					<div class="sticky">
+						<div class="accordion mb-3">
+							<CollapsingCard header="Accounts" :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
+								<div>
+									<button v-for="account in accounts" :key="account.id"
+											class="filter-option text-truncate mr-1 mb-1 btn"
+											:class="{
+												'btn-primary': !disabledAccounts[account.id],
+												'btn-light': disabledAccounts[account.id],
+												'btn-danger': account.error !== undefined,
+											}"
+											@click="toggleAccount(account.id)">{{account.name}}</button>
+								</div>
+								<hr />
+								<div class="text-center mt-3">
+									<button class="btn btn-secondary" @click="manageAccounts()">
+										<i class="fab fa-aws"></i>
+										Manage Accounts
+									</button>
+
+									<div v-if="accounts.some(a => a.error !== undefined)" class="mt-3 alert alert-danger">
+										Some of your accounts have invalid credentials.
+									</div>
+								</div>
+							</CollapsingCard>
+						</div>
+
+						<div class="accordion mb-3">
+							<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
+						</div>
+
+						<div class="accordion mb-3">
+							<CollapsingCard header="Services" collapsed :badge="`${services.length - Object.keys(disabledServices).length} / ${services.length}`">
+								<button v-for="service in services" :key="service"
 										class="filter-option text-truncate mr-1 mb-1 btn"
-										:class="{
-											'btn-primary': !disabledAccounts[account.id],
-											'btn-light': disabledAccounts[account.id],
-											'btn-danger': account.error !== undefined,
-										}"
-										@click="toggleAccount(account.id)">{{account.name}}</button>
-							</div>
-							<hr />
-							<div class="text-center mt-3">
-								<button class="btn btn-secondary" @click="manageAccounts()">
-									<i class="fab fa-aws"></i>
-									Manage Accounts
-								</button>
+										:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
+										@click="toggleService(service)">{{service}}</button>
+							</CollapsingCard>
+							<CollapsingCard header="Resource Types" collapsed :badge="`${kinds.length - Object.keys(disabledKinds).length} / ${kinds.length}`">
+								<button v-for="kind in kinds" :key="kind"
+										class="filter-option text-truncate mr-1 mb-1 btn"
+										:class="{'btn-primary': !disabledKinds[kind], 'btn-light': disabledKinds[kind]}"
+										@click="toggleKind(kind)">{{kind}}</button>
+							</CollapsingCard>
+							<CollapsingCard header="Regions" collapsed :badge="`${regions.length - Object.keys(disabledRegions).length} / ${regions.length}`">
+								<button v-for="region in regions" :key="region"
+										class="filter-option text-truncate mr-1 mb-1 btn"
+										:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
+										@click="toggleRegion(region)">{{region}}</button>
+							</CollapsingCard>
+						</div>
 
-								<div v-if="accounts.some(a => a.error !== undefined)" class="mt-3 alert alert-danger">
-									Some of your accounts have invalid credentials.
+						<div class="accordion mb-3">
+							<CollapsingCard header="Options" collapsed>
+								<div class="d-inline-block w-50">Page Size:</div>
+								<div class="d-inline-block w-50">
+									<div class="btn-group">
+										<button v-for="n in pageSizeOptions" :key="n"
+												:disabled="pageSize === n"
+												@click="changePageSize(n)"
+												class="btn btn-primary">{{n}}</button>
+									</div>
 								</div>
-							</div>
-						</CollapsingCard>
-					</div>
-
-					<div class="accordion mb-3">
-						<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
-					</div>
-
-					<div class="accordion mb-3">
-						<CollapsingCard header="Services" :badge="`${services.length - Object.keys(disabledServices).length} / ${services.length}`">
-							<button v-for="service in services" :key="service"
-									class="filter-option text-truncate mr-1 mb-1 btn"
-									:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
-									@click="toggleService(service)">{{service}}</button>
-						</CollapsingCard>
-						<CollapsingCard header="Resource Types" :badge="`${kinds.length - Object.keys(disabledKinds).length} / ${kinds.length}`">
-							<button v-for="kind in kinds" :key="kind"
-									class="filter-option text-truncate mr-1 mb-1 btn"
-									:class="{'btn-primary': !disabledKinds[kind], 'btn-light': disabledKinds[kind]}"
-									@click="toggleKind(kind)">{{kind}}</button>
-						</CollapsingCard>
-						<CollapsingCard header="Regions" :badge="`${regions.length - Object.keys(disabledRegions).length} / ${regions.length}`">
-							<button v-for="region in regions" :key="region"
-									class="filter-option text-truncate mr-1 mb-1 btn"
-									:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
-									@click="toggleRegion(region)">{{region}}</button>
-						</CollapsingCard>
-					</div>
-
-					<div class="accordion mb-3">
-						<CollapsingCard header="Options" collapsed>
-							<div class="d-inline-block w-50">Page Size:</div>
-							<div class="d-inline-block w-50">
-								<div class="btn-group">
-									<button v-for="n in pageSizeOptions" :key="n"
-											:disabled="pageSize === n"
-											@click="changePageSize(n)"
-											class="btn btn-primary">{{n}}</button>
-								</div>
-							</div>
-						</CollapsingCard>
-					</div>
-
-					<div class="text-right p-3">
+							</CollapsingCard>
+						</div>
 					</div>
 				</div>
 				<div class="col col-8 col-xl-9">
