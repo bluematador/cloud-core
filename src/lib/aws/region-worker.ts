@@ -49,6 +49,7 @@ export abstract class RegionWorker {
 	private enqueue(priority: number, fn: (cancel: CancelToken) => Promise<any>): void {
 		this._progressTotal++;
 		this.queue.push({priority, fn});
+		this.account.updateProgressLazy();
 
 		if (this._started) {
 			this.ensureTimeout();
@@ -138,6 +139,7 @@ export abstract class RegionWorker {
 				}
 
 				this.processing = false;
+				this.account.updateProgressLazy();
 				this.ensureTimeout();
 			});
 		});

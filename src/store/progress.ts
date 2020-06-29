@@ -41,10 +41,6 @@ const mod = defineModule({
 	},
 	mutations: {
 		upsertProgress(state, payload: UpsertPayload): void {
-			if (!(payload.id in state.all)) {
-				window.setTimeout(updateProgress, 1);
-			}
-
 			Vue.set(state.all, payload.id, {
 				done: payload.done,
 				total: payload.total,
@@ -65,19 +61,3 @@ const modActionContext = (context: any) => moduleActionContext(context, mod)
 interface UpsertPayload extends Progress {
 	id: string
 }
-
-function updateProgress() {
-	if (updateProgressTimer) {
-		window.clearTimeout(updateProgressTimer);
-	}
-
-	const working = AWSDiscoveryManager.values().map(a => {
-		const progress = a.updateProgress();
-		return a.running || progress.total === 0;
-	}).some(w => w);
-
-	const timeout = working ? 500 : 10000;
-	updateProgressTimer = window.setTimeout(updateProgress, timeout);
-}
-
-let updateProgressTimer: number = window.setTimeout(updateProgress, 1000);

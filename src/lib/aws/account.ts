@@ -4,6 +4,7 @@ import AWS from 'aws-sdk';
 import Service from './service';
 import store, { AppStore } from '../../store';
 import { Account as AccountModel } from '../../store/accounts';
+import { throttle } from 'throttle-debounce';
 import { Progress } from '@/store/progress';
 
 AWS.config.update({
@@ -25,6 +26,10 @@ export class Account {
 	readonly sns: Services.SNS;
 
 	readonly store: AppStore;
+
+	readonly updateProgressLazy = throttle(100, false, () => {
+		this.updateProgress();
+	});
 
 	constructor(model: AccountModel) {
 		this._model = model;
@@ -123,7 +128,7 @@ export class Account {
 		Analytics.event('discovery', 'stop');
 	}
 
-	updateProgress(): Progress {
+	updateProgress(): void {
 		const progress = {
 			id: this._model.id,
 			done: this.progressDone,
@@ -132,8 +137,6 @@ export class Account {
 		};
 
 		this.store.commit.upsertProgress(progress);
-
-		return progress;
 	}
 
 	/**
