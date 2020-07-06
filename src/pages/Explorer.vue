@@ -49,7 +49,7 @@
 					</div>
 				</div>
 				<div class="col col-8 col-xl-9">
-					<div class="d-flex justify-content-around align-items-middle data-summary p-2 mb-4">
+					<div class="d-flex justify-content-between align-items-middle data-summary pt-2 pb-2 pl-4 pr-4 mb-4">
 						<span>
 							<span>{{costFormat.format(totalSpend)}}</span>
 							<small class="ml-2">Forecast</small>
@@ -109,7 +109,7 @@
 								</td>
 								<td v-if="resource.error === undefined">
 									<div v-if="resource.calculations">
-										{{costFormat.format(forecast * resource.calculations[costIndex]['total'].subtotal1h)}}
+										<strong>{{costFormat.format(forecast * resource.calculations[costIndex]['total'].subtotal1h)}}</strong>
 									</div>
 									<div v-else class="spinner-border spinner-border-sm"></div>
 								</td>

@@ -1,7 +1,6 @@
-@import '~bootstrap/scss/functions';
-@import '~bootstrap/scss/variables';
-
 /* bootstrap overrides */
+$primary: #0093EE;
+
 $table-accent-bg:             #F2F8FE;
 $table-hover-bg:              #BFDBF5;
 $table-border-color:          #A5D1E7;
@@ -11,6 +10,10 @@ $table-striped-order:         even;
 $card-border-color:                 $table-border-color;
 $card-cap-bg:                       $table-head-bg;
 
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+
 
 /* app specific */
 $hero-color: #364859;
+$icon-highlight: #3C7BFC;

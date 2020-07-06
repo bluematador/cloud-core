@@ -43,6 +43,8 @@ export default class CollapsingCard extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '../variables';
+
 .card-header {
 	cursor: pointer;
 }
@@ -50,5 +52,9 @@ export default class CollapsingCard extends Vue {
 span.badge-custom-color {
 	background-color: #8AB6CC;
 	color: #fff;
+}
+
+.card-header i {
+	color: $icon-highlight;
 }
 </style>
