@@ -1,14 +1,16 @@
 <template>
 	<div>
-		<h1 class="p-2">Breakdown</h1>
+		<h1 class="page-header">Breakdown</h1>
 
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<div class="sticky">
-						<div class="accordion mb-3">
-							<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
-						</div>
+					<div class="mb-3">
+						<AccountsCard disableToggle />
+					</div>
+
+					<div class="accordion mb-3">
+						<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
 					</div>
 				</div>
 
@@ -20,39 +22,76 @@
 						</div>
 					</div>
 					<div v-else>
-						<div class="sticky">
-							<div class="bread">
-								<div v-for="(filter, index) in filters" :key="filter.key" class="bread-group">
-									<div class="bread-sep" v-if="index > 0">
-										<i class="fas fa-angle-right"></i>
+						<div class="bread">
+							<div v-for="(filter, index) in filters" :key="filter.key" class="bread-group">
+								<div class="bread-sep" v-if="index > 0">
+									<i class="fas fa-angle-right"></i>
+								</div>
+								<div class="bread-item">
+									<div class="name">
+										<span v-if="index === (filters.length - 1)">{{filter.label}}</span>
+										<a v-else href="#" @click.prevent="removeFiltersAfter(index)">{{filter.label}}</a>
 									</div>
-									<div class="bread-item">
-										<div class="name">
-											<span v-if="index === (filters.length - 1)">{{filter.label}}</span>
-											<a v-else href="#" @click.prevent="removeFiltersAfter(index)">{{filter.label}}</a>
-										</div>
-										<div class="cost">
-											{{costFormat.format(costForFilter(index))}}
-										</div>
-										<div class="percent">
-											{{percentFormat.format(percentForFilter(index))}}
-										</div>
+									<div class="cost">
+										{{costFormat.format(costForFilter(index))}}
+									</div>
+									<div class="percent">
+										{{percentFormat.format(percentForFilter(index))}}
 									</div>
 								</div>
 							</div>
 						</div>
 
-						<div class="row">
-							<div v-for="key in graphKeys" :key="key"
-									v-if="showChart(key)"
-									class="col col-12 col-lg-6 text-center pb-3">
-								<h4 class="graph-header">By {{key}}</h4>
-								<div :id="'container-' + key" class="chart-container w-100">
-									<canvas :id="canvasIdForKey(key)"
-											:makeshiftReload="loadChart(key)"
-											@click="drilldown(key, $event)"
-											width="100" height="150"></canvas>
+						<div class="mb-4 text-center">
+							<h3>Select Breakdown</h3>
+							<div class="btn-group">
+								<button v-for="key in graphKeys" :key="key"
+										v-if="chartAvailable(key)"
+										type="button"
+										@click.prevent="selectGraph(key)"
+										class="btn text-capitalize"
+										:class="{
+											'btn-primary': currentGraph === key,
+											'btn-outline-primary': currentGraph !== key,
+										}">{{key}}</button>
+							</div>
+						</div>
+
+						<div class="row mb-4 mt-4">
+							<div class="col col-12 col-lg-6">
+								<div class="sticky-graph sticky-top">
+									<canvas id='piechart'
+											:makeshiftReload="loadChart(currentGraph)"
+											@click="drilldown(currentGraph, $event)"
+											width="100" height="100"></canvas>
 								</div>
+							</div>
+							<div class="col col-12 col-lg-6">
+								<table class="table table-striped table-hover table-bordered">
+									<thead class="thead-light">
+										<tr>
+											<th width="50%" class="text-capitalize">{{currentGraph}}</th>
+											<th width="25%">
+												<i class="fas fa-caret-down"></i>
+												Forecast
+											</th>
+											<th width="25%">Size</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(data, index) in currentGraphChartData" :key="index">
+											<td>
+												<div class="d-inline-block"
+														style="width:15px; height: 0.75rem;"
+														:style="'background-color: ' + chartColor(index)">
+												</div>
+												{{data.label}}
+											</td>
+											<td><strong>{{costFormat.format(data.value)}}</strong></td>
+											<td>{{percentFormat.format(data.value / costForFilter(filters.length-1))}}</td>
+										</tr>
+									</tbody>
+								</table>
 							</div>
 						</div>
 					</div>
@@ -63,18 +102,24 @@
 </template>
 
 <script lang="ts">
+import 'chartjs-plugin-colorschemes';
+import AccountsCard from '@/components/AccountsCard.vue';
 import Analytics from '@/lib/google-analytics';
 import Chart from 'chart.js';
 import CollapsingCard from '@/components/CollapsingCard.vue';
 import CostCalculations from '@/components/CostCalculations.vue';
 import { Component, Ref, Vue } from 'vue-property-decorator';
 import { Resource } from '@/store/resources';
-import 'chartjs-plugin-colorschemes';
 
 type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w';
 
+// https://nagix.github.io/chartjs-plugin-colorschemes/colorchart.html
+const graphColorScheme = 'brewer.SetOne9';
+const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'];
+
 @Component({
 	components: {
+		AccountsCard,
 		CollapsingCard,
 		CostCalculations,
 	},
@@ -105,7 +150,8 @@ export default class Breakdown extends Vue {
 		'calculations',
 	];
 
-	private charts: {[key: string]: Chart} = {};
+	currentGraph: string = 'service';
+	private chart!: Chart;
 
 	costIndex: CostOptions = 'avg1d';
 	forecast: number = 720;
@@ -122,7 +168,11 @@ export default class Breakdown extends Vue {
 		return done > 0 && done === total;
 	}
 
-	showChart(option: string): boolean {
+	chartColor(index: number): string {
+		return colors[index % colors.length];
+	}
+
+	chartAvailable(option: string): boolean {
 		const filteredByResource = this.filters.some(f => f.key === 'resource');
 		const filteredByPassedOption = this.filters.some(f => f.key === option);
 
@@ -135,6 +185,11 @@ export default class Breakdown extends Vue {
 		else {
 			return !filteredByPassedOption && !filteredByResource;
 		}
+	}
+
+	selectGraph(value: string): void {
+		Analytics.event('breakdown', 'show-graph-' + value);
+		this.currentGraph = value;
 	}
 
 	setCostIndex(value: CostOptions): void {
@@ -150,6 +205,7 @@ export default class Breakdown extends Vue {
 	removeFiltersAfter(index: number): void {
 		Analytics.event('breakdown', 'filter-remove');
 		this.filters.splice(index + 1, this.filters.length - index);
+		this.ensureGraphSelected();
 	}
 
 	costForFilter(index: number): number {
@@ -201,6 +257,10 @@ export default class Breakdown extends Vue {
 
 	get filteredResources(): Resource[] {
 		return this.filterResources(this.filters);
+	}
+
+	get currentGraphChartData(): ChartData {
+		return this.chartData(this.currentGraph);
 	}
 
 	private chartData(key: string): ChartData {
@@ -259,7 +319,6 @@ export default class Breakdown extends Vue {
 
 	private loadChart(key: string): void {
 		const data = this.chartData(key);
-		const canvasId = this.canvasIdForKey(key);
 		const dataset = data.map(d => d.value);
 		const labels = data.map(d => d.label);
 
@@ -267,15 +326,14 @@ export default class Breakdown extends Vue {
 		this.$nextTick(() => {
 			const me = this;
 
-			if (key in this.charts) {
+			if (this.chart !== undefined) {
 				// i tried updating the chart, but
 				// 1) we're completely changing every datapoint anyway
 				// 2) it doesn't work for some reason
-				this.charts[key].destroy();
-				delete this.charts[key];
+				this.chart.destroy();
 			}
 
-			this.charts[key] = new Chart(canvasId, {
+			this.chart = new Chart('piechart', {
 				type: 'pie',
 				data: {
 					datasets: [{
@@ -285,14 +343,7 @@ export default class Breakdown extends Vue {
 				},
 				options: {
 					legend: {
-						position: 'top',
-						labels: {
-							filter: (legendItem, _) => {
-								// the number of elements shown impacts space available for the graph,
-								// and can also cause confusion because of repeating colors.
-								return legendItem.index !== undefined && legendItem.index < 9;
-							},
-						},
+						display: false,
 					},
 					hover: {
 						onHover: function(e) {
@@ -340,8 +391,7 @@ export default class Breakdown extends Vue {
 					},
 					plugins: {
 						colorschemes: {
-							// https://nagix.github.io/chartjs-plugin-colorschemes/colorchart.html
-							scheme: 'brewer.SetOne9',
+							scheme: graphColorScheme,
 						},
 					},
 				},
@@ -355,10 +405,6 @@ export default class Breakdown extends Vue {
 		return one.name;
 	}
 
-	private canvasIdForKey(key: string): string {
-		return 'graph-' + key;
-	}
-
 	drilldown(key: string, event: Event): void {
 		if (key === 'calculations') {
 			// can't drill into calculations
@@ -367,8 +413,7 @@ export default class Breakdown extends Vue {
 
 		Analytics.event('breakdown', 'filter-' + key);
 
-		const chart = this.charts[key];
-		const elements = chart.getElementsAtEvent(event);
+		const elements = this.chart.getElementsAtEvent(event);
 		if (elements.length > 0) {
 			const element = (elements[0] as any);
 			if (element._index !== undefined) {
@@ -381,6 +426,20 @@ export default class Breakdown extends Vue {
 					label: selectedDatum.label,
 				});
 			}
+		}
+
+		this.ensureGraphSelected();
+	}
+
+	private ensureGraphSelected(): void {
+		if (!this.chartAvailable(this.currentGraph)) {
+			let selectedNewGraph = false;
+			this.graphKeys.forEach(key => {
+				if (!selectedNewGraph && this.chartAvailable(key)) {
+					selectedNewGraph = true;
+					this.currentGraph = key;
+				}
+			});
 		}
 	}
 }
@@ -401,16 +460,14 @@ type ChartData = ChartDatum[]
 <style scoped lang="scss">
 @import '../variables';
 
-.graph-header {
-	text-transform: capitalize;
-}
-
 // based on bootstrap's breadcrumb, but must be multi-line
 .bread {
-	background-color: $breadcrumb-bg;
+	background-color: $table-head-bg;
 	padding: $breadcrumb-padding-y $breadcrumb-padding-x;
 	margin-bottom: $breadcrumb-margin-bottom;
 	border-radius: $breadcrumb-border-radius;
+	border: 1px solid $table-border-color;
+	color: $body-color;
 
 	.bread-group {
 		flex-direction: row;
@@ -421,14 +478,16 @@ type ChartData = ChartDatum[]
 		vertical-align: top;
 	}
 
+	.bread-sep, .bread-item {
+		margin-right: 30px;
+	}
+
 	.bread-sep {
-		margin-left: 15px;
 		font-size: 2rem;
 		display: inline-block;
 	}
 
 	.bread-item {
-		margin-left: 15px;
 		display: inline-block;
 		text-align: center;
 

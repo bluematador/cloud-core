@@ -1,7 +1,10 @@
 <template>
 	<div id="app">
 		<nav class="navbar navbar-expand navbar-dark bg-dark">
-			<router-link to="/explorer" class="navbar-brand mr-5" title="Cloud Cost Optimization Resource Explorer">Cloud CORE</router-link>
+			<router-link to="/explorer" class="navbar-brand mr-5" title="Cloud Cost Optimization Resource Explorer">
+				<i class="fas fa-cloud"></i>
+				Cloud CORE
+			</router-link>
 			<ul class="navbar-nav mr-auto">
 				<li class="nav-item">
 					<router-link to="/explorer" class="nav-link">Explorer</router-link>
@@ -85,7 +88,7 @@ nav .nav-item {
 
 .progress-floater {
 	position: absolute;
-	right: 3px; top: 59px;
+	right: 16px; top: 70px;
 	width: 400px;
 }
 </style>

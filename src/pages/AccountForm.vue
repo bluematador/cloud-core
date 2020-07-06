@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<h1 class="p-2">{{header}}</h1>
+		<h1 class="page-header">{{header}}</h1>
 		<Form :id="id" />
 	</div>
 </template>

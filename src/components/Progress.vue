@@ -1,23 +1,13 @@
 <template>
-	<div v-if="show">
-		<CollapsingCard header="Discovery Progress" :collapsed="allDone || total === 0" :badge="allDone ? 'DONE' : undefined">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col">
-						Calls Made:
-					</div>
-					<div class="col text-right">
-						<strong>{{done}} / {{total}}</strong>
-					</div>
+	<div v-if="show" class="component">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col">
+					Discovery Progress
 				</div>
-				<div class="row">
-					<div class="col">
-						Bad Responses:
-						<i class="fas fa-question-circle" title="A majority of these are AWS services, partitions, and regions that you haven't subscribed to yet. Some of them may be rate limiting or permission errors."></i>
-					</div>
-					<div class="col text-right">
-						<strong>{{errors}}</strong>
-					</div>
+				<div class="col text-right">
+					<span v-if="allDone" class="badge badge-custom mr-2">DONE</span>
+					<strong>{{done}} / {{total}}</strong>
 				</div>
 			</div>
 			<div class="progress mt-3 ml-2 mr-2">
@@ -25,7 +15,7 @@
 						:class="{'progress-bar-striped': !allDone, 'progress-bar-animated': !allDone, 'bg-success': allDone}"
 						:style="'width: ' + percentDone + '%'"></div>
 			</div>
-		</CollapsingCard>
+		</div>
 	</div>
 </template>
 
@@ -51,10 +41,6 @@ export default class Progress extends Vue {
 		return this.$store.direct.getters.overallProgress.total;
 	}
 
-	get errors(): number {
-		return this.$store.direct.getters.overallProgress.error;
-	}
-
 	get allDone(): boolean {
 		return this.done > 0 && this.done === this.total;
 	}
@@ -68,13 +54,11 @@ export default class Progress extends Vue {
 <style scoped lang="scss">
 @import '../variables';
 
-.card {
-	border: 1px solid $dark;
+.component {
+	color: theme-color('light');
 }
-.card-header {
-	cursor: pointer;
-}
-.card-body {
-	background-color: #aaa;
+
+.badge-custom {
+	background-color: #8AB6CC;
 }
 </style>

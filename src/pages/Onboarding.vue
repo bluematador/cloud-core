@@ -50,22 +50,16 @@
 			</div>
 		</div>
 
-		<div ref="accountform">
+		<div ref="ctaForm">
 			<div v-if="needsDecryption" class="brick">
 				<h2 class="text-center">Welcome Back!</h2>
 
 				<div class="text-center mt-4">
 					<p>There are <strong>{{encryptedCount}} encrypted accounts</strong> in local storage.</p>
 					<p>You can either enter the key or delete and start from scratch.</p>
-					<button @click="decrypt()" class="ml-2 mr-2 btn btn-primary">
-						<i class="fas fa-key"></i>
-						Enter Decryption Key
-					</button>
-					<button @click.prevent="wipe()" class="ml-2 mr-2 btn btn-danger">
-						<i class="fas fa-trash"></i>
-						Delete Encrypted Accounts
-					</button>
 				</div>
+
+				<EncryptionForm />
 			</div>
 			<div v-else-if="needsFirstAccount" class="brick">
 				<h2 class="text-center">Get Started</h2>
@@ -78,20 +72,21 @@
 
 <script lang="ts">
 import { Component, Ref, Vue } from 'vue-property-decorator';
-import Analytics from '@/lib/google-analytics';
-import ExplainerVideo from '@/components/ExplainerVideo.vue';
 import AccountForm from '@/components/AccountForm.vue';
+import Analytics from '@/lib/google-analytics';
+import EncryptionForm from '@/components/EncryptionForm.vue';
+import ExplainerVideo from '@/components/ExplainerVideo.vue';
 import smoothscroll from 'smoothscroll';
-
 
 @Component({
 	components: {
-		ExplainerVideo,
 		AccountForm,
+		EncryptionForm,
+		ExplainerVideo,
 	}
 })
 export default class Onboarding extends Vue {
-	@Ref('accountform') form!: HTMLElement;
+	@Ref('ctaForm') form!: HTMLElement;
 
 	beforeMount(): void {
 		if (!this.needsDecryption && !this.needsFirstAccount) {
@@ -111,15 +106,6 @@ export default class Onboarding extends Vue {
 		return this.$store.direct.getters.countEncryptedAccounts();
 	}
 
-	decrypt(): void {
-		this.$router.push('/encrypt');
-	}
-
-	wipe(): void {
-		Analytics.event('accounts', 'wipe');
-		this.$store.direct.commit.wipeEverything();
-	}
-
 	scrollToForm() {
 		smoothscroll(this.form);
 	}
@@ -127,10 +113,11 @@ export default class Onboarding extends Vue {
 </script>
 
 <style scoped lang="scss">
-$highlight: #364859;
+@import '../variables';
+
 .hero {
 	border-radius: 0;
-	background-color: $highlight;
+	background-color: $hero-color;
 	color: #fff;
 	margin-bottom: 0;
 
@@ -141,7 +128,7 @@ $highlight: #364859;
 }
 .step-number {
 	font-size: 3rem;
-	color: $highlight;
+	color: $hero-color;
 }
 .brick {
 	padding: 40px 0;

@@ -6,7 +6,7 @@
 				<i v-else class="fas fa-plus align-middle"></i>
 			</span>
 			<strong>{{header}}</strong>
-			<span v-if="badge" class="badge badge-pill badge-secondary ml-2">{{badge}}</span>
+			<span v-if="badge" class="badge badge-pill badge-custom-color ml-2">{{badge}}</span>
 		</div>
 
 		<div class="collapse" :class="{'show': show}">
@@ -45,5 +45,10 @@ export default class CollapsingCard extends Vue {
 <style scoped lang="scss">
 .card-header {
 	cursor: pointer;
+}
+
+span.badge-custom-color {
+	background-color: #8AB6CC;
+	color: #fff;
 }
 </style>

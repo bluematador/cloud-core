@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<h1 class="p-2">Accounts</h1>
+		<h1 class="page-header">Accounts</h1>
 
 		<div class="text-center mb-4">
 			<button @click.prevent="addAccount()" class="ml-2 mr-2 btn btn-primary">

@@ -1,80 +1,67 @@
 <template>
 	<div>
-		<h1 class="p-2">Explorer</h1>
+		<h1 class="page-header">Explorer</h1>
 
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col col-4 col-xl-3">
-					<div class="sticky">
-						<div class="accordion mb-3">
-							<CollapsingCard header="Accounts" :badge="'' + (accounts.length - Object.keys(disabledAccounts).length)">
-								<div>
-									<button v-for="account in accounts" :key="account.id"
-											class="filter-option text-truncate mr-1 mb-1 btn"
-											:class="{
-												'btn-primary': !disabledAccounts[account.id],
-												'btn-light': disabledAccounts[account.id],
-												'btn-danger': account.error !== undefined,
-											}"
-											@click="toggleAccount(account.id)">{{account.name}}</button>
+					<div class="accordion mb-3">
+						<AccountsCard @toggle="toggleAccount" />
+					</div>
+
+					<div class="accordion mb-3">
+						<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
+					</div>
+
+					<div class="accordion mb-3">
+						<CollapsingCard header="Services" collapsed :badge="`${services.length - Object.keys(disabledServices).length} / ${services.length}`">
+							<button v-for="service in services" :key="service"
+									class="filter-option text-truncate mr-1 mb-1 btn"
+									:class="{'btn-primary': !disabledServices[service], 'btn-outline-primary': disabledServices[service]}"
+									@click="toggleService(service)">{{service}}</button>
+						</CollapsingCard>
+						<CollapsingCard header="Resource Types" collapsed :badge="`${kinds.length - Object.keys(disabledKinds).length} / ${kinds.length}`">
+							<button v-for="kind in kinds" :key="kind"
+									class="filter-option text-truncate mr-1 mb-1 btn"
+									:class="{'btn-primary': !disabledKinds[kind], 'btn-outline-primary': disabledKinds[kind]}"
+									@click="toggleKind(kind)">{{kind}}</button>
+						</CollapsingCard>
+						<CollapsingCard header="Regions" collapsed :badge="`${regions.length - Object.keys(disabledRegions).length} / ${regions.length}`">
+							<button v-for="region in regions" :key="region"
+									class="filter-option text-truncate mr-1 mb-1 btn"
+									:class="{'btn-primary': !disabledRegions[region], 'btn-outline-primary': disabledRegions[region]}"
+									@click="toggleRegion(region)">{{region}}</button>
+						</CollapsingCard>
+					</div>
+
+					<div class="accordion mb-3">
+						<CollapsingCard header="Options" collapsed>
+							<div class="d-inline-block w-50">Page Size:</div>
+							<div class="d-inline-block w-50">
+								<div class="btn-group">
+									<button v-for="n in pageSizeOptions" :key="n"
+											:disabled="pageSize === n"
+											@click="changePageSize(n)"
+											class="btn btn-primary">{{n}}</button>
 								</div>
-								<hr />
-								<div class="text-center mt-3">
-									<button class="btn btn-secondary" @click="manageAccounts()">
-										<i class="fab fa-aws"></i>
-										Manage Accounts
-									</button>
-
-									<div v-if="accounts.some(a => a.error !== undefined)" class="mt-3 alert alert-danger">
-										Some of your accounts have invalid credentials.
-									</div>
-								</div>
-							</CollapsingCard>
-						</div>
-
-						<div class="accordion mb-3">
-							<CostCalculations @forecast="setForecast" @costIndex="setCostIndex" />
-						</div>
-
-						<div class="accordion mb-3">
-							<CollapsingCard header="Services" collapsed :badge="`${services.length - Object.keys(disabledServices).length} / ${services.length}`">
-								<button v-for="service in services" :key="service"
-										class="filter-option text-truncate mr-1 mb-1 btn"
-										:class="{'btn-primary': !disabledServices[service], 'btn-light': disabledServices[service]}"
-										@click="toggleService(service)">{{service}}</button>
-							</CollapsingCard>
-							<CollapsingCard header="Resource Types" collapsed :badge="`${kinds.length - Object.keys(disabledKinds).length} / ${kinds.length}`">
-								<button v-for="kind in kinds" :key="kind"
-										class="filter-option text-truncate mr-1 mb-1 btn"
-										:class="{'btn-primary': !disabledKinds[kind], 'btn-light': disabledKinds[kind]}"
-										@click="toggleKind(kind)">{{kind}}</button>
-							</CollapsingCard>
-							<CollapsingCard header="Regions" collapsed :badge="`${regions.length - Object.keys(disabledRegions).length} / ${regions.length}`">
-								<button v-for="region in regions" :key="region"
-										class="filter-option text-truncate mr-1 mb-1 btn"
-										:class="{'btn-primary': !disabledRegions[region], 'btn-light': disabledRegions[region]}"
-										@click="toggleRegion(region)">{{region}}</button>
-							</CollapsingCard>
-						</div>
-
-						<div class="accordion mb-3">
-							<CollapsingCard header="Options" collapsed>
-								<div class="d-inline-block w-50">Page Size:</div>
-								<div class="d-inline-block w-50">
-									<div class="btn-group">
-										<button v-for="n in pageSizeOptions" :key="n"
-												:disabled="pageSize === n"
-												@click="changePageSize(n)"
-												class="btn btn-primary">{{n}}</button>
-									</div>
-								</div>
-							</CollapsingCard>
-						</div>
+							</div>
+						</CollapsingCard>
 					</div>
 				</div>
 				<div class="col col-8 col-xl-9">
+					<div class="d-flex justify-content-around align-items-middle data-summary p-2 mb-4">
+						<span>
+							<span>{{costFormat.format(totalSpend)}}</span>
+							<small class="ml-2">Forecast</small>
+						</span>
+						<span>
+							<span>{{resources.length}}</span>
+							<small class="ml-2">Resources</small>
+						</span>
+					</div>
+
 					<table class="table table-striped table-hover table-bordered">
-						<thead>
+						<thead class="thead-light">
 							<tr>
 								<th class="sortable" @click="changeSort('name')" width="30%">
 									<i v-if="sort === 'name' && !sortAsc" class="fas fa-caret-down"></i>
@@ -138,7 +125,6 @@
 					</table>
 
 					<div class="mt-3 mb-3 text-center">
-						<h3>{{resources.length}} Resources</h3>
 						<Pages v-if="resources.length > 0" :page="page" :total="pageCount" @page="changePage" />
 					</div>
 				</div>
@@ -151,6 +137,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { Account } from '@/store/accounts';
 import { Resource } from '@/store/resources';
+import AccountsCard from '@/components/AccountsCard.vue';
 import Analytics from '@/lib/google-analytics';
 import CollapsingCard from '@/components/CollapsingCard.vue';
 import CostCalculations from '@/components/CostCalculations.vue';
@@ -161,6 +148,7 @@ type CostOptions = 'last'|'avg1h'|'avg1d'|'avg1w';
 
 @Component({
 	components: {
+		AccountsCard,
 		CollapsingCard,
 		CostCalculations,
 		Pages,
@@ -201,6 +189,12 @@ export default class Explorer extends Vue {
 	setForecast(value: number): void {
 		Analytics.event('explorer', 'forecast-' + value);
 		this.forecast = value;
+	}
+
+	get totalSpend(): number {
+		return this.resources.map(r => {
+			return r.calculations ? r.calculations[this.costIndex]['total'].subtotal1h * this.forecast : 0;
+		}).sum();
 	}
 
 	get resources() {
@@ -338,6 +332,22 @@ export default class Explorer extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '../variables';
+
+.data-summary {
+	background-color: #7ED321;
+	border-radius: 0.5rem;
+	border: 1px solid darken(#7ED321, 10%);
+	color: #fff;
+	font-size: 3rem;
+	font-weight: bold;
+
+	small {
+		font-size: 14px;
+		font-weight: bold;
+	}
+}
+
 .filter-option {
 	max-width: 100%;
 }
@@ -347,7 +357,7 @@ th.sortable {
 	cursor: pointer;
 
 	&:hover {
-		background-color: #aaa;
+		background-color: $table-hover-bg;
 	}
 }
 

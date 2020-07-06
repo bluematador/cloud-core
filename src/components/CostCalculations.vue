@@ -4,9 +4,12 @@
 			<div>Extrapolate costs from the last:</div>
 			<div class="btn-group">
 				<button v-for="(name, key) in costIndexes" :key="key"
-						:disabled="costIndex === key"
 						@click="setCostIndex(key)"
-						class="btn btn-primary">{{name}}</button>
+						class="btn"
+						:class="{
+							'btn-primary': costIndex === key,
+							'btn-outline-primary': costIndex !== key,
+						}">{{name}}</button>
 			</div>
 			<div class="mt-3 mb-3">
 				<span style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 5px; font-size: 0.75rem;">and then</span>
@@ -14,9 +17,12 @@
 			<div>Forecast costs for:</div>
 			<div class="btn-group">
 				<button v-for="(name, seconds) in forecasts" :key="name"
-						:disabled="forecast === Number(seconds)"
 						@click="setForecast(seconds)"
-						class="btn btn-primary">{{name}}</button>
+						class="btn"
+						:class="{
+							'btn-primary': forecast === Number(seconds),
+							'btn-outline-primary': forecast !== Number(seconds),
+						}">{{name}}</button>
 			</div>
 		</div>
 	</CollapsingCard>
